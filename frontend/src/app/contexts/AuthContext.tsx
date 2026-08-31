@@ -46,12 +46,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true };
     } catch (error: any) {
       if (error.response?.data?.requirePasswordChange) {
-        return { 
-          requirePasswordChange: true, 
-          email: error.response.data.email 
+        return {
+          requirePasswordChange: true,
+          email: error.response.data.email
         };
       }
-      throw new Error(error.response?.data?.message || 'Erreur lors de la connexion');
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      // Aucune réponse du serveur : backend arrêté, mauvaise URL d'API, ou CORS bloqué
+      throw new Error(
+        `Impossible de joindre le serveur (${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}). ` +
+        'Vérifiez que le backend est démarré.'
+      );
     }
   };
 

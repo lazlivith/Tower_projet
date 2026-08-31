@@ -43,15 +43,23 @@ app.use(helmet({
 
 app.use(cookieParser()); // Nécessaire pour lire req.cookies (refresh token httpOnly)
 
-// CORS — accepte une liste d'origines séparées par des virgules (prod + previews)
+// CORS — liste d'origines autorisées (séparées par des virgules) via FRONTEND_URL.
+// En dev, toute origine localhost/127.0.0.1 est acceptée (peu importe le port de Vite).
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
+const isDev = process.env.NODE_ENV !== 'production';
+const isLocalhost = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-    return cb(new Error(`Origine non autorisée par CORS : ${origin}`));
+    // Requêtes same-origin / outils (curl, Postman) : pas d'en-tête Origin
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    if (isDev && isLocalhost(origin)) return cb(null, true);
+    // Origine refusée : on ne lève PAS d'erreur (évite un 500) — on n'ajoute juste pas les en-têtes CORS
+    return cb(null, false);
   },
   credentials: true,
 }));
