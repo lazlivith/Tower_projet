@@ -1,48 +1,58 @@
 import express from 'express';
 import {
   getPublishedPublications,
-  getPublishedProjects
+  getPublishedProjects,
+  getPublicationById,
+  getProjectById,
 } from '../controllers/cms.controller.js';
 import {
   createPublication,
   updatePublication,
   togglePublicationStatus,
   deletePublication,
+  getAllPublications,
   createProject,
   updateProject,
   toggleProjectVisibility,
   deleteProject,
+  getAllProjects,
   getQuotes,
   updateQuoteStatus,
-  deleteQuote
+  deleteQuote,
 } from '../controllers/admin.cms.controller.js';
-import { requireAuth } from '../middlewares/auth.middleware.js';
+import { requireAuth, checkGlobalActivation } from '../middlewares/auth.middleware.js';
 import { restrictToRole } from '../middlewares/role.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import { createPublicationSchema, createProjectSchema } from '../validators/cms.validator.js';
 
 const router = express.Router();
 
-// ---- ROUTES PUBLIQUES (Pas de token nécessaire) ----
+// ---- ROUTES PUBLIQUES ----
 router.get('/publications', getPublishedPublications);
-router.get('/projects', getPublishedProjects);
+router.get('/publications/:id', getPublicationById);
+router.get('/projects', getPublishedProjects); // ?status=ONGOING|COMPLETED
+router.get('/projects/:id', getProjectById);
 
-// ---- ROUTES ADMIN (Protégées par MANAGER) ----
-router.use(requireAuth, restrictToRole('MANAGER'));
+// ---- ROUTES ADMIN (MANAGER) ----
+router.use(requireAuth, checkGlobalActivation, restrictToRole('MANAGER'));
 
-// Gestion Publications
+// Vue back-office : tout le contenu, brouillons/non-publiés inclus
+router.get('/admin/publications', getAllPublications);
+router.get('/admin/projects', getAllProjects);
+
+// Publications
 router.post('/publications', validate({ body: createPublicationSchema }), createPublication);
 router.put('/publications/:id', validate({ body: createPublicationSchema }), updatePublication);
 router.patch('/publications/:id/toggle-publish', togglePublicationStatus);
 router.delete('/publications/:id', deletePublication);
 
-// Gestion Projets
+// Projets
 router.post('/projects', validate({ body: createProjectSchema }), createProject);
 router.put('/projects/:id', validate({ body: createProjectSchema }), updateProject);
 router.patch('/projects/:id/toggle-publish', toggleProjectVisibility);
 router.delete('/projects/:id', deleteProject);
 
-// Gestion Devis (Quotes)
+// Devis
 router.get('/quotes', getQuotes);
 router.patch('/quotes/:id/status', updateQuoteStatus);
 router.delete('/quotes/:id', deleteQuote);

@@ -42,22 +42,48 @@ export const getPublishedPublications = async (req, res) => {
 export const getPublishedProjects = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 12;
     const skip = (page - 1) * limit;
 
+    const statusFilter = ['ONGOING', 'COMPLETED'].includes(String(req.query.status).toUpperCase())
+      ? String(req.query.status).toUpperCase()
+      : undefined;
+    const where = { isPublished: true, ...(statusFilter ? { status: statusFilter } : {}) };
+
     const [data, total] = await Promise.all([
-      prisma.project.findMany({
-        where: { isPublished: true }, // Mise à jour pour n'afficher que les projets publiés
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit
-      }),
-      prisma.project.count({ where: { isPublished: true } })
+      prisma.project.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.project.count({ where }),
     ]);
 
     return res.status(200).json({ data, total, page, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     return res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+/** PUBLIC — Une publication publiée par son id. */
+export const getPublicationById = async (req, res) => {
+  try {
+    const pub = await prisma.publication.findFirst({
+      where: { id: req.params.id, status: 'PUBLISHED' },
+    });
+    if (!pub) return res.status(404).json({ message: 'Publication introuvable.' });
+    return res.status(200).json(pub);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/** PUBLIC — Un projet publié par son id. */
+export const getProjectById = async (req, res) => {
+  try {
+    const project = await prisma.project.findFirst({
+      where: { id: req.params.id, isPublished: true },
+    });
+    if (!project) return res.status(404).json({ message: 'Projet introuvable.' });
+    return res.status(200).json(project);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
 

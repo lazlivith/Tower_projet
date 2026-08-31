@@ -1,60 +1,92 @@
-import { Link } from 'react-router';
-import { Lock, Mail, Phone } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Lock, GraduationCap, CreditCard, ArrowRight, LogOut, Clock } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
+import api from '../../../services/api';
+
+interface PendingCourse {
+  id: string;
+  title: string;
+  accessStatus: string;
+}
 
 export default function RestrictedAccess() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [pending, setPending] = useState<PendingCourse[]>([]);
+
+  // Un instructeur/manager ne doit jamais atterrir ici
+  useEffect(() => {
+    if (user?.role === 'MANAGER') navigate('/learn/admin', { replace: true });
+    if (user?.role === 'INSTRUCTOR') navigate('/learn/instructor', { replace: true });
+    if (user?.role === 'STUDENT' && user.hasActiveAccess) navigate('/learn/student', { replace: true });
+  }, [user, navigate]);
+
+  // Inscriptions en attente (paiement hors-ligne / validation admin)
+  useEffect(() => {
+    api.get('/courses/my-courses')
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+        setPending(list.filter((c: any) => c.accessStatus && c.accessStatus !== 'ACTIVE'));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = () => { logout(); navigate('/learn/login'); };
 
   return (
     <div className="min-h-screen bg-[#F5F6FA] flex items-center justify-center py-12 px-4">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-12 text-center">
-        <Lock className="w-20 h-20 text-[#FFC107] mx-auto mb-6" />
-        <h1 className="mb-4">Accès Restreint</h1>
-        <p className="text-gray-600 mb-8">
-          Bonjour <span className="font-semibold">{user?.nom}</span>, votre compte a bien été créé mais votre accès aux formations est en attente de validation.
-        </p>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-          <h3 className="mb-3 text-yellow-800">Prochaines étapes:</h3>
-          <ol className="text-left space-y-2 text-gray-700">
-            <li className="flex items-start gap-2">
-              <span className="font-bold text-[#FFC107]">1.</span>
-              <span>Validation de votre inscription par notre équipe</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-bold text-[#FFC107]">2.</span>
-              <span>Réception d'un email de confirmation (sous 24-48h)</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="font-bold text-[#FFC107]">3.</span>
-              <span>Accès complet à la plateforme de formations</span>
-            </li>
-          </ol>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div className="bg-[#F5F6FA] p-6 rounded-lg">
-            <Mail className="w-8 h-8 text-[#FFC107] mx-auto mb-3" />
-            <h4 className="mb-2">Email</h4>
-            <p className="text-sm text-gray-600">contact@tower-structure.fr</p>
+      <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-10">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-[#FFC107]/15 flex items-center justify-center">
+            <Lock className="w-8 h-8 text-[#FFB300]" />
           </div>
-          <div className="bg-[#F5F6FA] p-6 rounded-lg">
-            <Phone className="w-8 h-8 text-[#FFC107] mx-auto mb-3" />
-            <h4 className="mb-2">Téléphone</h4>
-            <p className="text-sm text-gray-600">+33 1 23 45 67 89</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Pour toute question, n'hésitez pas à nous contacter.
+          <h1 className="text-2xl font-bold text-[#1A1A2E] mb-2">
+            Bonjour {user?.nom} — votre compte est prêt
+          </h1>
+          <p className="text-gray-500">
+            Pour accéder à votre espace d'apprentissage, choisissez une formation et effectuez le paiement.
+            Votre accès s'ouvre automatiquement après validation.
           </p>
+        </div>
+
+        {pending.length > 0 && (
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-amber-800 mb-2">
+              <Clock className="w-4 h-4" /> En attente de validation
+            </div>
+            <ul className="text-sm text-amber-800 space-y-1">
+              {pending.map((c) => <li key={c.id}>• {c.title}</li>)}
+            </ul>
+            <p className="text-xs text-amber-700 mt-2">
+              Un règlement par virement/chèque a été enregistré. L'administration active votre accès dès réception.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-8 space-y-3">
           <Link
-            to="/"
-            className="inline-block px-6 py-3 bg-[#FFC107] text-[#1A1A2E] rounded-lg hover:bg-[#FFD54F] transition-colors"
+            to="/formations"
+            className="flex items-center justify-between rounded-xl bg-[#1A1A2E] text-white px-5 py-4 hover:bg-[#26264a] transition-colors"
           >
-            Retour à l'accueil
+            <span className="flex items-center gap-3 font-semibold">
+              <GraduationCap className="w-5 h-5 text-[#FFC107]" /> Parcourir le catalogue de formations
+            </span>
+            <ArrowRight className="w-5 h-5" />
           </Link>
+
+          <div className="rounded-xl border border-gray-200 px-5 py-4 text-sm text-gray-500 flex items-start gap-3">
+            <CreditCard className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
+            Paiement en ligne sécurisé (carte, comptant ou 3×) ou sur devis. Après paiement, votre espace de cours
+            est débloqué immédiatement.
+          </div>
+        </div>
+
+        <div className="mt-8 flex items-center justify-between text-sm">
+          <Link to="/" className="text-gray-500 hover:text-[#1A1A2E]">← Retour à l'accueil</Link>
+          <button onClick={handleLogout} className="flex items-center gap-1.5 text-gray-500 hover:text-red-600">
+            <LogOut className="w-4 h-4" /> Se déconnecter
+          </button>
         </div>
       </div>
     </div>

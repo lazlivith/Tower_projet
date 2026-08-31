@@ -21,7 +21,7 @@ export default function Header() {
       case 'INSTRUCTOR':
         return '/learn/instructor';
       case 'STUDENT':
-        return user.isActive ? '/learn/student' : '/learn/restricted';
+        return user.isActive && user.hasActiveAccess ? '/learn/student' : '/learn/restricted';
       default:
         return '/';
     }
@@ -73,6 +73,12 @@ export default function Header() {
 
               <Link to="/formations" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
                 Formations
+              </Link>
+              <Link to="/projets" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
+                Projets
+              </Link>
+              <Link to="/blog" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
+                Blog
               </Link>
               <Link to="/quote" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
                 Devis
@@ -129,6 +135,12 @@ export default function Header() {
               </Link>
               <Link to="/formations" className="hover:text-[#FFC107] transition-colors">
                 Formations
+              </Link>
+              <Link to="/projets" className="hover:text-[#FFC107] transition-colors">
+                Projets
+              </Link>
+              <Link to="/blog" className="hover:text-[#FFC107] transition-colors">
+                Blog
               </Link>
               <Link to="/quote" className="hover:text-[#FFC107] transition-colors">
                 Devis

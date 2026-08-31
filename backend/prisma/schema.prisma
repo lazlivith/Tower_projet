@@ -60,6 +60,11 @@ enum PublicationStatus {
   PUBLISHED
 }
 
+enum ProjectStatus {
+  ONGOING
+  COMPLETED
+}
+
 // ---- TABLES (Modèles relationnels) ----
 
 model User {
@@ -333,22 +338,27 @@ model Quote {
 model Publication {
   id        String            @id @default(uuid()) @db.Uuid
   title     String            @db.VarChar(255)
+  excerpt   String?           @db.VarChar(500)
+  category  String?           @db.VarChar(100)
   content   String            @db.Text
-  imageUrl  String?           @map("image_url") @db.VarChar(255)
+  imageUrl  String?           @map("image_url") @db.VarChar(500)
   status    PublicationStatus @default(DRAFT)
   createdAt DateTime          @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamp
 
   @@map("publications")
 }
 
 model Project {
-  id          String   @id @default(uuid()) @db.Uuid
-  title       String   @db.VarChar(255)
-  description String   @db.Text
-  imageUrl    String?  @map("image_url") @db.VarChar(255)
-  category    String   @db.VarChar(100)
-  isPublished Boolean  @default(false) @map("is_published")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+  id          String        @id @default(uuid()) @db.Uuid
+  title       String        @db.VarChar(255)
+  description String        @db.Text
+  imageUrl    String?       @map("image_url") @db.VarChar(500)
+  category    String        @db.VarChar(100)
+  status      ProjectStatus @default(COMPLETED)
+  isPublished Boolean       @default(false) @map("is_published")
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp
 
   @@map("projects")
 }

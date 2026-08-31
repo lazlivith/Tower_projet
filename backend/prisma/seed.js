@@ -123,6 +123,48 @@ async function main() {
   });
   console.log(`✅ Inscription active : ${student.email} → "${course.title}"`);
 
+  // ─── Contenu vitrine (blog + projets) ──────────────────────────────────
+  if ((await prisma.publication.count()) === 0) {
+    await prisma.publication.createMany({
+      data: [
+        {
+          title: 'Le BIM au service de la conception parasismique',
+          excerpt: "Comment la maquette numérique fiabilise les calculs sismiques dès l'esquisse.",
+          category: 'BIM',
+          content: "La maquette numérique (BIM) permet de centraliser les données géométriques et structurelles...\n\nEn phase de conception parasismique, elle offre une base fiable pour les analyses modales et le dimensionnement selon l'Eurocode 8.",
+          status: 'PUBLISHED',
+        },
+        {
+          title: 'Diagnostic structurel : les 5 signaux à ne pas ignorer',
+          excerpt: 'Fissures, flèches, corrosion… un guide rapide pour prioriser les interventions.',
+          category: 'Diagnostic',
+          content: "Un diagnostic structurel commence toujours par une inspection visuelle méthodique...",
+          status: 'PUBLISHED',
+        },
+        {
+          title: 'Brouillon — Nouveautés Eurocodes 2026',
+          excerpt: 'À paraître.',
+          category: 'Eurocodes',
+          content: 'Contenu en cours de rédaction.',
+          status: 'DRAFT',
+        },
+      ],
+    });
+    console.log('✅ 3 publications de démo créées');
+  }
+
+  if ((await prisma.project.count()) === 0) {
+    await prisma.project.createMany({
+      data: [
+        { title: 'Résidence Al Andalous — Rabat', description: 'Immeuble R+8 en béton armé, étude complète de structure et note de calcul Eurocode.', category: 'Résidentiel', status: 'COMPLETED', isPublished: true },
+        { title: 'Centre commercial Marina — Casablanca', description: 'Charpente métallique de grande portée, 12 000 m² de plancher.', category: 'Commercial', status: 'COMPLETED', isPublished: true },
+        { title: 'Pont sur l’Oued Bouregreg', description: 'Assistance technique et contrôle d’exécution — ouvrage en cours.', category: 'Infrastructure', status: 'ONGOING', isPublished: true },
+        { title: 'Extension hôpital régional', description: 'Renforcement parasismique d’un bâtiment existant — chantier en cours.', category: 'Santé', status: 'ONGOING', isPublished: true },
+      ],
+    });
+    console.log('✅ 4 projets de démo créés');
+  }
+
   console.log('\n🎉 [SEED] Terminé.');
   console.log('   👨‍💼 admin@tower.ma  👨‍🏫 prof@tower.ma  👤 eleve@tower.ma  — mot de passe : password123');
   return enrollment;

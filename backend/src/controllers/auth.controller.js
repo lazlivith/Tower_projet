@@ -112,6 +112,11 @@ export const login = async (req, res) => {
     const activeAccesses = user.enrollments
       .filter(e => e.accessStatus === 'ACTIVE')
       .map(e => e.courseId);
+    const pendingAccesses = user.enrollments
+      .filter(e => e.accessStatus === 'SUSPENDED')
+      .map(e => e.courseId);
+    // Instructeurs/managers ont toujours accès à leur espace ; les étudiants doivent avoir payé.
+    const hasActiveAccess = user.role !== 'STUDENT' || activeAccesses.length > 0;
 
     // 1. Access token (courte durée — 15 min)
     const accessToken = generateAccessToken({ ...user, activeAccesses });
@@ -125,7 +130,10 @@ export const login = async (req, res) => {
     return res.status(200).json({
       message: "Connexion réussie.",
       accessToken,
-      user: { id: user.id, nom: user.nom, email: user.email, role: user.role, isActive: user.isActive }
+      user: {
+        id: user.id, nom: user.nom, email: user.email, role: user.role, isActive: user.isActive,
+        hasActiveAccess, activeAccesses, pendingAccesses
+      }
     });
   } catch (error) {
     console.error("[AUTH] Erreur lors de la connexion :", error);
@@ -196,10 +204,18 @@ export const refreshToken = async (req, res) => {
     // Mettre à jour le cookie avec le nouveau refresh token
     res.cookie('refreshToken', newRawToken, REFRESH_COOKIE_OPTIONS);
 
+    const hasActiveAccess = user.role !== 'STUDENT' || activeAccesses.length > 0;
+    const pendingAccesses = user.enrollments
+      .filter(e => e.accessStatus === 'SUSPENDED')
+      .map(e => e.courseId);
+
     return res.status(200).json({
       message: "Token renouvelé avec succès.",
       accessToken,
-      user: { id: user.id, nom: user.nom, email: user.email, role: user.role }
+      user: {
+        id: user.id, nom: user.nom, email: user.email, role: user.role, isActive: user.isActive,
+        hasActiveAccess, activeAccesses, pendingAccesses
+      }
     });
   } catch (error) {
     console.error("[AUTH] Erreur refresh token :", error);

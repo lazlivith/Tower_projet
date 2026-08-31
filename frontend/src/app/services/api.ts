@@ -3,6 +3,13 @@ import axios from 'axios';
 // URL de base de l'API — configurée via .env (VITE_API_URL), fallback localhost en dev
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Origine du serveur (sans le préfixe /api) — pour les fichiers statiques /uploads
+export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+
+/** Transforme une URL relative renvoyée par l'API (/uploads/…) en URL absolue. */
+export const toAbsoluteUrl = (url?: string | null): string =>
+  !url ? '' : url.startsWith('http') ? url : `${API_ORIGIN}${url.startsWith('/') ? '' : '/'}${url}`;
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {

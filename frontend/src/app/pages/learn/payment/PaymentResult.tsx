@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { useAuth } from '../../../contexts/AuthContext';
 
 /**
  * Pages de retour Stripe Checkout : /payment/success et /payment/cancel.
@@ -10,14 +11,24 @@ import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 export default function PaymentResult({ status }: { status: 'success' | 'cancel' }) {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { refreshSession } = useAuth();
   const sessionId = params.get('session_id');
 
   useEffect(() => {
-    if (status === 'success') {
-      const t = setTimeout(() => navigate('/learn/student'), 5000);
-      return () => clearTimeout(t);
-    }
-  }, [status, navigate]);
+    if (status !== 'success') return;
+    // Le webhook Stripe active l'accès côté serveur ; on rafraîchit la session
+    // (avec quelques tentatives, le temps que le webhook soit traité).
+    let cancelled = false;
+    const poll = async (tries: number) => {
+      const u = await refreshSession();
+      if (cancelled) return;
+      if (u?.hasActiveAccess) { navigate('/learn/student'); return; }
+      if (tries > 0) setTimeout(() => poll(tries - 1), 2500);
+      else setTimeout(() => navigate('/learn/student'), 3000);
+    };
+    poll(4);
+    return () => { cancelled = true; };
+  }, [status, navigate, refreshSession]);
 
   const isSuccess = status === 'success';
 

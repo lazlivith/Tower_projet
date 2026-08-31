@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import api from '../../../services/api';
+import { useAuth } from '../../../contexts/AuthContext';
 import { CheckCircle, Loader, BookOpen, Clock, Tag, ArrowRight, FlaskConical, CreditCard } from 'lucide-react';
 
 type PaymentPlan = 'FULL' | 'THREE_INSTALLMENTS';
@@ -8,6 +9,7 @@ type PaymentPlan = 'FULL' | 'THREE_INSTALLMENTS';
 export default function PaymentPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const { refreshSession } = useAuth();
 
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +61,7 @@ export default function PaymentPage() {
     setError('');
     try {
       await api.post('/payments/simulate', { courseId });
+      await refreshSession(); // met à jour hasActiveAccess
       setSuccess(true);
       setTimeout(() => navigate('/learn/student'), 3000);
     } catch (err: any) {

@@ -295,45 +295,79 @@ export const assignInstructorToCourse = async (req, res) => {
 };
 
 /**
- * ADMIN — Récupérer la liste des inscriptions en attente d'activation
+ * ADMIN — Liste des inscriptions, filtrable par statut (?status=SUSPENDED|ACTIVE|COMPLETED).
+ * Par défaut : SUSPENDED (= en attente de paiement/validation).
  */
 export const getPendingEnrollments = async (req, res) => {
   try {
-    const pendingEnrollments = await prisma.enrollment.findMany({
-      where: { accessStatus: 'PENDING' },
+    const status = ['SUSPENDED', 'ACTIVE', 'COMPLETED'].includes(req.query.status)
+      ? req.query.status
+      : 'SUSPENDED';
+
+    const enrollments = await prisma.enrollment.findMany({
+      where: { accessStatus: status },
       include: {
         student: { select: { id: true, nom: true, email: true } },
-        course: { select: { id: true, title: true, price: true } }
+        course: { select: { id: true, title: true, price: true } },
+        payments: { select: { amount: true, paymentMethod: true, paymentStatus: true, createdAt: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    return res.status(200).json(pendingEnrollments);
+    return res.status(200).json(enrollments);
   } catch (error) {
-    return res.status(500).json({ message: "Erreur lors de la récupération des inscriptions en attente." });
+    console.error('[ADMIN] getPendingEnrollments:', error);
+    return res.status(500).json({ message: "Erreur lors de la récupération des inscriptions." });
   }
 };
 
 /**
- * ADMIN — Valider manuellement l'accès d'un étudiant à une formation (paiement simulé)
+ * ADMIN — Activer / suspendre l'accès d'un étudiant à une formation.
+ * PATCH /admin/enrollments/:enrollmentId/validate-access   body: { status?: 'ACTIVE'|'SUSPENDED' }
+ * Sert notamment à débloquer un utilisateur qui n'a pas encore payé.
  */
 export const validateEnrollmentAccess = async (req, res) => {
   const { enrollmentId } = req.params;
+  const target = req.body?.status === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE';
   try {
     const enrollment = await prisma.enrollment.update({
       where: { id: enrollmentId },
-      data: { accessStatus: 'ACTIVE' },
+      data: { accessStatus: target },
       include: {
-        student: { select: { nom: true, email: true } },
-        course: { select: { title: true } }
+        student: { select: { id: true, nom: true, email: true } },
+        course: { select: { id: true, title: true } }
       }
     });
 
+    // À l'activation, s'assurer que l'étudiant a bien ses lignes de progression
+    if (target === 'ACTIVE') {
+      const lessons = await prisma.moduleLesson.findMany({
+        where: { courseId: enrollment.courseId }, select: { id: true }
+      });
+      if (lessons.length > 0) {
+        await prisma.progress.createMany({
+          data: lessons.map((l) => ({ studentId: enrollment.studentId, lessonId: l.id, isCompleted: false })),
+          skipDuplicates: true
+        });
+      }
+      await prisma.notification.create({
+        data: {
+          userId: enrollment.studentId,
+          type: 'SYSTEM',
+          message: `Votre accès à la formation « ${enrollment.course.title} » a été activé par l'administration.`
+        }
+      });
+    }
+
     return res.status(200).json({
-      message: `Accès de ${enrollment.student.nom} à "${enrollment.course.title}" activé avec succès.`,
+      message: target === 'ACTIVE'
+        ? `Accès de ${enrollment.student.nom} à « ${enrollment.course.title} » activé.`
+        : `Accès de ${enrollment.student.nom} suspendu.`,
       enrollment
     });
   } catch (error) {
-    return res.status(500).json({ message: "Erreur lors de la validation de l'accès." });
+    if (error.code === 'P2025') return res.status(404).json({ message: "Inscription introuvable." });
+    console.error('[ADMIN] validateEnrollmentAccess:', error);
+    return res.status(500).json({ message: "Erreur lors de la modification de l'accès." });
   }
 };

@@ -1,31 +1,13 @@
-import { z } from 'zod';
 import prisma from '../config/prisma.js';
 
 // ---- Fonction Utilitaire Cache (Simulé) ----
 const invalidatePublicCache = (model, action) => {
-  // Dans un vrai système, on pourrait vider Redis ou purger un CDN
-  console.log(`[CACHE INVALIDATION] Données rafraîchies pour le modèle ${model} suite à l'action ${action}. Les requêtes publiques renverront les données les plus fraîches.`);
+  console.log(`[CACHE] ${model} / ${action} — les requêtes publiques renverront les données fraîches.`);
 };
 
-// ---- Zod Schemas ----
-export const publicationSchema = z.object({
-  title: z.string().min(3, "Le titre doit faire au moins 3 caractères"),
-  content: z.string().min(10, "Le contenu ne peut pas être vide"),
-  imageUrl: z.string().url("Le lien de l'image est invalide").optional().or(z.literal('')),
-  status: z.enum(['DRAFT', 'PUBLISHED']).default('DRAFT')
-});
-
-export const projectSchema = z.object({
-  title: z.string().min(3, "Le titre doit faire au moins 3 caractères"),
-  description: z.string().min(10, "La description ne peut pas être vide"),
-  category: z.string().min(2, "La catégorie est requise"),
-  imageUrl: z.string().url("Le lien de l'image est invalide").optional().or(z.literal('')),
-  isPublished: z.boolean().default(false)
-});
-
-export const quoteSchema = z.object({
-  status: z.enum(['PENDING', 'ACCEPTED', 'CONTACTED', 'REJECTED'])
-});
+// Le corps est déjà validé et nettoyé (.strip) par validate({ body }) au niveau route.
+const clean = (v) => (v === '' ? null : v);
+const QUOTE_STATUSES = ['PENDING', 'ACCEPTED', 'CONTACTED', 'REJECTED'];
 
 // ==========================================
 // COURSES (FORMATIONS) — création / mise à jour back-office
@@ -93,31 +75,54 @@ export const updateCourse = async (req, res) => {
 // ==========================================
 export const createPublication = async (req, res) => {
   try {
-    const parsedData = publicationSchema.parse(req.body);
-    const publication = await prisma.$transaction(async (tx) => {
-      return await tx.publication.create({ data: parsedData });
+    const { title, content, excerpt, category, imageUrl, status } = req.body;
+    const publication = await prisma.publication.create({
+      data: {
+        title,
+        content,
+        excerpt: clean(excerpt),
+        category: clean(category),
+        imageUrl: clean(imageUrl),
+        status: status || 'DRAFT',
+      },
     });
     invalidatePublicCache('Publication', 'CREATE');
-    return res.status(201).json({ message: "Publication créée", publication });
+    return res.status(201).json({ message: 'Publication créée', publication });
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ errors: error.errors });
-    return res.status(500).json({ message: "Erreur serveur", error: error.message });
+    console.error('[CMS] createPublication:', error);
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
 
 export const updatePublication = async (req, res) => {
   try {
-    const { id } = req.params;
-    const parsedData = publicationSchema.parse(req.body);
+    const { title, content, excerpt, category, imageUrl, status } = req.body;
     const publication = await prisma.publication.update({
-      where: { id },
-      data: parsedData
+      where: { id: req.params.id },
+      data: {
+        title,
+        content,
+        excerpt: clean(excerpt),
+        category: clean(category),
+        imageUrl: clean(imageUrl),
+        ...(status ? { status } : {}),
+      },
     });
     invalidatePublicCache('Publication', 'UPDATE');
-    return res.status(200).json({ message: "Publication mise à jour", publication });
+    return res.status(200).json({ message: 'Publication mise à jour', publication });
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ errors: error.errors });
-    return res.status(500).json({ message: "Erreur serveur", error: error.message });
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Publication introuvable.' });
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/** ADMIN — Toutes les publications (brouillons inclus). */
+export const getAllPublications = async (req, res) => {
+  try {
+    const publications = await prisma.publication.findMany({ orderBy: { createdAt: 'desc' } });
+    return res.status(200).json(publications);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
 
@@ -155,31 +160,54 @@ export const deletePublication = async (req, res) => {
 // ==========================================
 export const createProject = async (req, res) => {
   try {
-    const parsedData = projectSchema.parse(req.body);
-    const project = await prisma.$transaction(async (tx) => {
-      return await tx.project.create({ data: parsedData });
+    const { title, description, category, imageUrl, status, isPublished } = req.body;
+    const project = await prisma.project.create({
+      data: {
+        title,
+        description,
+        category,
+        imageUrl: clean(imageUrl),
+        status: status || 'COMPLETED',
+        isPublished: isPublished ?? false,
+      },
     });
     invalidatePublicCache('Project', 'CREATE');
-    return res.status(201).json({ message: "Projet créé", project });
+    return res.status(201).json({ message: 'Projet créé', project });
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ errors: error.errors });
-    return res.status(500).json({ message: "Erreur serveur", error: error.message });
+    console.error('[CMS] createProject:', error);
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
 
 export const updateProject = async (req, res) => {
   try {
-    const { id } = req.params;
-    const parsedData = projectSchema.parse(req.body);
+    const { title, description, category, imageUrl, status, isPublished } = req.body;
     const project = await prisma.project.update({
-      where: { id },
-      data: parsedData
+      where: { id: req.params.id },
+      data: {
+        title,
+        description,
+        category,
+        imageUrl: clean(imageUrl),
+        ...(status ? { status } : {}),
+        ...(isPublished !== undefined ? { isPublished } : {}),
+      },
     });
     invalidatePublicCache('Project', 'UPDATE');
-    return res.status(200).json({ message: "Projet mis à jour", project });
+    return res.status(200).json({ message: 'Projet mis à jour', project });
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ errors: error.errors });
-    return res.status(500).json({ message: "Erreur serveur", error: error.message });
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Projet introuvable.' });
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/** ADMIN — Tous les projets (non publiés inclus). */
+export const getAllProjects = async (req, res) => {
+  try {
+    const projects = await prisma.project.findMany({ orderBy: { createdAt: 'desc' } });
+    return res.status(200).json(projects);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
 
@@ -228,17 +256,16 @@ export const getQuotes = async (req, res) => {
 
 export const updateQuoteStatus = async (req, res) => {
   try {
-    const { id } = req.params;
-    const parsedData = quoteSchema.parse(req.body);
-    const quote = await prisma.quote.update({
-      where: { id },
-      data: { status: parsedData.status }
-    });
+    const status = String(req.body?.status || '').toUpperCase();
+    if (!QUOTE_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `Statut invalide (${QUOTE_STATUSES.join(', ')}).` });
+    }
+    const quote = await prisma.quote.update({ where: { id: req.params.id }, data: { status } });
     invalidatePublicCache('Quote', 'UPDATE_STATUS');
-    return res.status(200).json({ message: "Statut du devis mis à jour", quote });
+    return res.status(200).json({ message: 'Statut du devis mis à jour', quote });
   } catch (error) {
-    if (error instanceof z.ZodError) return res.status(400).json({ errors: error.errors });
-    return res.status(500).json({ message: "Erreur serveur", error: error.message });
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Devis introuvable.' });
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
 

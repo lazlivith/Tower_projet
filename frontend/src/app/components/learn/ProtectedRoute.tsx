@@ -27,7 +27,15 @@ export default function ProtectedRoute({ children, requiredRole, requireAccess }
     return <Navigate to="/" />;
   }
 
-  if (requireAccess && !user.isActive) {
+  const onRestrictedPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/learn/restricted');
+
+  // Compte suspendu par l'admin
+  if (user.isActive === false && !onRestrictedPage) {
+    return <Navigate to="/learn/restricted" />;
+  }
+
+  // Espace de cours : nécessite un accès actif (étudiant ayant payé / validé par l'admin)
+  if (requireAccess && user.role === 'STUDENT' && !user.hasActiveAccess && !onRestrictedPage) {
     return <Navigate to="/learn/restricted" />;
   }
 

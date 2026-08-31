@@ -9,13 +9,19 @@ interface User {
   nom: string; // Utilisé par le backend au lieu de 'name'
   role: UserRole;
   isActive?: boolean;
+  /** true si l'utilisateur peut accéder à l'espace de cours (instructeur/manager, ou étudiant ayant payé). */
+  hasActiveAccess?: boolean;
+  activeAccesses?: string[];
+  pendingAccesses?: string[];
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<any>;
-  register: (email: string, password: string, nom: string) => Promise<void>;
+  register: (email: string, password: string, nom: string) => Promise<any>;
   logout: () => void;
+  /** Rafraîchit la session (droits d'accès inclus) — à appeler après un paiement. */
+  refreshSession: () => Promise<User | null>;
   isLoading: boolean;
 }
 
@@ -26,24 +32,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored session
+    // Session stockée (affichage immédiat)
     const storedUser = localStorage.getItem('tower_user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try { setUser(JSON.parse(storedUser)); } catch { /* ignore */ }
     }
     setIsLoading(false);
+
+    // Puis on rafraîchit en arrière-plan (droits d'accès à jour après paiement, etc.)
+    if (localStorage.getItem('tower_token')) {
+      refreshSession();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const applySession = (u: User, token: string) => {
+    setUser(u);
+    localStorage.setItem('tower_user', JSON.stringify(u));
+    localStorage.setItem('tower_token', token);
+  };
 
   const login = async (email: string, password: string) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       // Le backend retourne 'accessToken' (et non 'token')
       const { user, accessToken: token } = response.data;
-      
-      setUser(user);
-      localStorage.setItem('tower_user', JSON.stringify(user));
-      localStorage.setItem('tower_token', token);
-      return { success: true };
+
+      applySession(user, token);
+      return { success: true, user };
     } catch (error: any) {
       if (error.response?.data?.requirePasswordChange) {
         return {
@@ -64,15 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string, nom: string) => {
     try {
-      const response = await api.post('/auth/register', { email, password, nom });
-      const { user } = response.data;
-      
-      // Après inscription, on peut soit connecter l'utilisateur automatiquement,
-      // soit demander de se connecter. On choisit de ne pas le connecter si on n'a pas de token renvoyé.
-      // Mais on peut au moins stocker l'info qu'il existe.
-      // Pour être propre, on va simuler un auto-login ou l'obliger à repasser par login
+      await api.post('/auth/register', { email, password, nom });
+      // Connexion automatique juste après l'inscription (le compte n'a AUCUN accès aux cours
+      // tant qu'un paiement n'a pas été effectué / validé).
+      const res = await login(email, password);
+      return res;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Erreur lors de l\'inscription');
+      if (error.response?.data?.message) throw new Error(error.response.data.message);
+      throw error instanceof Error ? error : new Error("Erreur lors de l'inscription");
     }
   };
 
@@ -82,8 +97,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('tower_token');
   };
 
+  const refreshSession = async (): Promise<User | null> => {
+    try {
+      const res = await api.post('/auth/refresh');
+      const { user: u, accessToken } = res.data;
+      if (u && accessToken) {
+        applySession(u, accessToken);
+        return u;
+      }
+    } catch {
+      /* le refresh peut échouer si la session a expiré — on ne casse rien */
+    }
+    return null;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, refreshSession, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

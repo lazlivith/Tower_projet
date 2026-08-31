@@ -24,32 +24,28 @@ export default function Login() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const result = await login(formData.email, formData.password);
-        
-        if (result?.requirePasswordChange) {
-          navigate('/learn/first-login', { 
-            state: { 
-              email: result.email, 
-              currentPassword: formData.password 
-            } 
-          });
-          return;
-        }
+      const result = isLogin
+        ? await login(formData.email, formData.password)
+        : await register(formData.email, formData.password, formData.name);
 
-        // Redirection selon le rôle de l'utilisateur connecté
-        const storedUser = JSON.parse(localStorage.getItem('tower_user') || '{}');
-        const role = storedUser?.role;
-        if (role === 'MANAGER') {
-          navigate(returnUrl || '/learn/admin');
-        } else if (role === 'INSTRUCTOR') {
-          navigate(returnUrl || '/learn/instructor');
-        } else {
-          navigate(returnUrl || '/learn/student');
-        }
+      if (result?.requirePasswordChange) {
+        navigate('/learn/first-login', {
+          state: { email: result.email, currentPassword: formData.password }
+        });
+        return;
+      }
+
+      const u = result?.user || JSON.parse(localStorage.getItem('tower_user') || '{}');
+
+      if (u.role === 'MANAGER') {
+        navigate(returnUrl || '/learn/admin');
+      } else if (u.role === 'INSTRUCTOR') {
+        navigate(returnUrl || '/learn/instructor');
+      } else if (u.hasActiveAccess) {
+        navigate(returnUrl || '/learn/student');
       } else {
-        await register(formData.email, formData.password, formData.name);
-        navigate(returnUrl || '/learn/restricted');
+        // Étudiant sans accès : doit choisir une formation et payer
+        navigate('/learn/restricted');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
