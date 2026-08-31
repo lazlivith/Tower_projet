@@ -9,6 +9,7 @@
     "dev": "nodemon src/index.js",
     "test": "vitest run",
     "seed": "node prisma/seed.js",
+    "seed:content": "node prisma/seed-content.js",
     "postinstall": "prisma generate"
   },
   "engines": {
