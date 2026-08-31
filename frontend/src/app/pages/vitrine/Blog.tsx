@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Calendar, ArrowRight, Newspaper } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
+import { useReveal } from '../../hooks/useReveal';
 
 interface Post {
   id: string;
@@ -12,6 +13,7 @@ interface Post {
   imageUrl: string | null;
   createdAt: string;
 }
+const PLACEHOLDER = 'https://placehold.co/1200x800/17160f/faf9f6?text=Journal';
 
 export default function Blog() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -19,75 +21,78 @@ export default function Blog() {
 
   useEffect(() => {
     api.get('/cms/publications')
-      .then((res) => setPosts(res.data?.data ?? res.data ?? []))
+      .then((r) => setPosts(r.data?.data ?? r.data ?? []))
       .catch(() => setPosts([]))
       .finally(() => setLoading(false));
   }, []);
 
-  return (
-    <div className="min-h-screen">
-      <Helmet>
-        <title>Blog & Actualités | Tower Structure</title>
-        <meta name="description" content="Articles et actualités de Tower Structure : BIM, Eurocodes, diagnostic structurel, ingénierie." />
-      </Helmet>
+  useReveal([posts]);
 
-      <section className="bg-gradient-to-br from-[#1A1A2E] to-[#16213E] text-white py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="mb-4 text-4xl font-extrabold">Blog & Actualités</h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Analyses, retours d'expérience et actualités de l'ingénierie structurelle
-          </p>
-        </div>
+  const [lead, ...rest] = posts;
+
+  return (
+    <div>
+      <Helmet><title>Journal — Tower Structure</title></Helmet>
+
+      <section className="mx-auto max-w-[1400px] px-5 pt-20 sm:px-8 lg:px-12 lg:pt-28">
+        <p className="eyebrow">Notes de terrain</p>
+        <h1 className="mt-4 max-w-3xl text-4xl leading-[1.05] sm:text-6xl lg:text-[4.5rem]">Journal</h1>
+        <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">
+          Méthodes, retours de chantier et repères techniques — BIM, Eurocodes, diagnostic.
+        </p>
       </section>
 
-      <section className="py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <p className="text-center text-gray-400 py-12">Chargement…</p>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <Newspaper className="w-12 h-12 mx-auto mb-4 opacity-40" />
-              Aucun article publié pour le moment.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {posts.map((p) => (
-                <Link
-                  key={p.id}
-                  to={`/blog/${p.id}`}
-                  className="group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all flex flex-col"
-                >
-                  <div className="h-48 bg-gray-100 overflow-hidden">
-                    <img
-                      src={toAbsoluteUrl(p.imageUrl) || 'https://placehold.co/600x400/1A1A2E/FFC107?text=Tower+Structure'}
-                      alt={p.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400/1A1A2E/FFC107?text=Tower+Structure'; }}
-                    />
-                  </div>
-                  <div className="p-6 flex flex-col flex-1">
-                    {p.category && (
-                      <span className="text-xs px-2.5 py-1 bg-[#FFC107]/20 text-[#8a6d0b] rounded-full font-semibold w-fit mb-3">
-                        {p.category}
-                      </span>
-                    )}
-                    <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">{p.title}</h3>
-                    <p className="text-sm text-gray-500 line-clamp-3 flex-1">{p.excerpt}</p>
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 text-xs text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {new Date(p.createdAt).toLocaleDateString('fr-FR')}
-                      </span>
-                      <span className="flex items-center gap-1 text-[#1A1A2E] font-semibold group-hover:gap-2 transition-all">
-                        Lire <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
+      <section className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+        {loading ? (
+          <p className="py-20 text-center text-[color:var(--color-ink-soft)]">Chargement…</p>
+        ) : posts.length === 0 ? (
+          <p className="py-20 text-center text-[color:var(--color-ink-soft)]">Aucun article publié pour le moment.</p>
+        ) : (
+          <>
+            {/* Article à la une */}
+            <Link to={`/blog/${lead.id}`} className="fade-up group grid gap-8 md:grid-cols-2 md:items-center">
+              <div className="reveal-img aspect-[4/3] w-full bg-[color:var(--color-line)]">
+                <img
+                  src={toAbsoluteUrl(lead.imageUrl) || PLACEHOLDER}
+                  alt={lead.title}
+                  className="h-full w-full object-cover"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
+                />
+              </div>
+              <div>
+                <div className="text-[12px] uppercase tracking-[0.16em] text-[color:var(--color-ink-soft)]">
+                  {lead.category || 'Article'} · {new Date(lead.createdAt).toLocaleDateString('fr-FR')}
+                </div>
+                <h2 className="mt-4 text-3xl sm:text-4xl">{lead.title}</h2>
+                <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">{lead.excerpt}</p>
+                <span className="arrow-link mt-6 inline-flex text-[color:var(--color-ink)]">Lire l'article <ArrowUpRight className="w-4 h-4" /></span>
+              </div>
+            </Link>
+
+            {/* Reste */}
+            {rest.length > 0 && (
+              <div className="mt-20 grid gap-x-8 gap-y-14 border-t border-[color:var(--color-line)] pt-14 md:grid-cols-3">
+                {rest.map((p) => (
+                  <Link key={p.id} to={`/blog/${p.id}`} className="fade-up group block">
+                    <div className="reveal-img aspect-[4/3] w-full bg-[color:var(--color-line)]">
+                      <img
+                        src={toAbsoluteUrl(p.imageUrl) || PLACEHOLDER}
+                        alt={p.title}
+                        className="h-full w-full object-cover"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
+                      />
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+                    <div className="mt-4 text-[11px] uppercase tracking-[0.16em] text-[color:var(--color-ink-soft)]">
+                      {p.category || 'Article'} · {new Date(p.createdAt).toLocaleDateString('fr-FR')}
+                    </div>
+                    <h3 className="mt-2 text-xl">{p.title}</h3>
+                    <p className="mt-2 line-clamp-2 text-[14px] text-[color:var(--color-ink-soft)]">{p.excerpt}</p>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </section>
     </div>
   );

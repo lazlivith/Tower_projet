@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
 
 interface Post {
@@ -20,48 +20,48 @@ export default function BlogPost() {
   const [state, setState] = useState<'loading' | 'ok' | 'notfound'>('loading');
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     api.get(`/cms/publications/${id}`)
-      .then((res) => { setPost(res.data); setState('ok'); })
+      .then((r) => { setPost(r.data); setState('ok'); })
       .catch(() => setState('notfound'));
   }, [id]);
 
-  if (state === 'loading') return <div className="min-h-screen flex items-center justify-center text-gray-400">Chargement…</div>;
+  if (state === 'loading') return <div className="py-40 text-center text-[color:var(--color-ink-soft)]">Chargement…</div>;
   if (state === 'notfound' || !post) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-500">Article introuvable.</p>
-        <Link to="/blog" className="text-[#1A1A2E] font-semibold hover:text-[#FFB300]">← Retour au blog</Link>
+      <div className="mx-auto max-w-[1400px] px-5 py-40 text-center sm:px-8 lg:px-12">
+        <p className="text-[color:var(--color-ink-soft)]">Article introuvable.</p>
+        <Link to="/blog" className="arrow-link mt-6 inline-flex text-[color:var(--color-ink)]">← Retour au journal</Link>
       </div>
     );
   }
 
   return (
-    <article className="min-h-screen">
-      <Helmet><title>{post.title} | Tower Structure</title></Helmet>
+    <article className="mx-auto max-w-[820px] px-5 pt-20 pb-28 sm:px-8 lg:pt-28">
+      <Helmet><title>{post.title} — Tower Structure</title></Helmet>
 
-      <div className="bg-gradient-to-br from-[#1A1A2E] to-[#16213E] text-white py-16">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white mb-6">
-            <ArrowLeft className="w-4 h-4" /> Tous les articles
-          </Link>
-          {post.category && (
-            <span className="text-xs px-2.5 py-1 bg-[#FFC107] text-[#1A1A2E] rounded-full font-bold">{post.category}</span>
-          )}
-          <h1 className="mt-4 text-3xl md:text-4xl font-extrabold">{post.title}</h1>
-          <p className="mt-3 text-sm text-gray-400 flex items-center gap-1">
-            <Calendar className="w-4 h-4" /> {new Date(post.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
-        </div>
+      <Link to="/blog" className="inline-flex items-center gap-2 text-[13px] text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]">
+        <ArrowLeft className="w-4 h-4" /> Journal
+      </Link>
+
+      <div className="mt-8 text-[12px] uppercase tracking-[0.16em] text-[color:var(--color-ink-soft)]">
+        {post.category || 'Article'} · {new Date(post.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+      </div>
+      <h1 className="mt-4 text-4xl leading-[1.08] sm:text-5xl">{post.title}</h1>
+      {post.excerpt && (
+        <p className="mt-6 text-lg leading-relaxed text-[color:var(--color-ink-soft)]">{post.excerpt}</p>
+      )}
+
+      {post.imageUrl && (
+        <img src={toAbsoluteUrl(post.imageUrl)} alt={post.title} className="mt-10 w-full object-cover" />
+      )}
+
+      <div className="mt-10 whitespace-pre-wrap text-[16.5px] leading-[1.75] text-[color:var(--color-ink)]">
+        {post.content}
       </div>
 
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">
-        {post.imageUrl && (
-          <img src={toAbsoluteUrl(post.imageUrl)} alt={post.title} className="w-full rounded-2xl mb-8 object-cover max-h-96" />
-        )}
-        {post.excerpt && <p className="text-lg text-gray-600 font-medium mb-6">{post.excerpt}</p>}
-        <div className="prose max-w-none whitespace-pre-wrap text-gray-800 leading-relaxed">
-          {post.content}
-        </div>
+      <div className="mt-16 border-t border-[color:var(--color-line)] pt-8">
+        <Link to="/blog" className="arrow-link inline-flex text-[color:var(--color-ink)]">← Tous les articles</Link>
       </div>
     </article>
   );

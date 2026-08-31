@@ -1,180 +1,148 @@
-import { Link, useNavigate } from 'react-router';
-import { Menu, X, User, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Menu, X, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
+const NAV = [
+  { to: '/projets', label: 'Projets' },
+  { to: '/services', label: 'Services' },
+  { to: '/formations', label: 'Formations' },
+  { to: '/blog', label: 'Journal' },
+  { to: '/about', label: 'Studio' },
+];
+
 export default function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const overlayHome = pathname === '/'; // header transparent au-dessus du hero
 
-  const getDashboardLink = () => {
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => { setOpen(false); }, [pathname]);
+
+  const dashboardLink = () => {
     if (!user) return '/learn/login';
-    switch (user.role) {
-      case 'MANAGER':
-        return '/learn/admin';
-      case 'INSTRUCTOR':
-        return '/learn/instructor';
-      case 'STUDENT':
-        return user.isActive && user.hasActiveAccess ? '/learn/student' : '/learn/restricted';
-      default:
-        return '/';
-    }
+    if (user.role === 'MANAGER') return '/learn/admin';
+    if (user.role === 'INSTRUCTOR') return '/learn/instructor';
+    return user.isActive && user.hasActiveAccess ? '/learn/student' : '/learn/restricted';
   };
+
+  const solid = scrolled || !overlayHome || open;
+  const textDark = solid;
 
   return (
-    <header className="bg-[#0A0A0A]/95 backdrop-blur-md text-white sticky top-0 z-50 border-b border-white/5">
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#FF6B00] rounded-sm flex items-center justify-center font-bold text-white tracking-tighter shadow-lg shadow-orange-500/20">
-              TS
-            </div>
-            <span className="font-bold text-xl tracking-tight">TOWER STRUCTURE</span>
-          </Link>
+    <>
+      <header
+        className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
+          solid ? 'bg-[color:var(--color-paper)]/90 backdrop-blur border-b border-[color:var(--color-line)]' : 'bg-transparent'
+        }`}
+      >
+        <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-12">
+          <div className="flex h-[72px] items-center justify-between">
+            <Link
+              to="/"
+              className={`font-[family-name:var(--font-display)] text-[15px] font-semibold tracking-[0.14em] uppercase ${
+                textDark ? 'text-[color:var(--color-ink)]' : 'text-white'
+              }`}
+            >
+              Tower&nbsp;Structure
+            </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center">
-            <div className="flex items-center gap-8 mr-12">
-              <Link to="/" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
-                Accueil
-              </Link>
-              <Link to="/about" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
-                À Propos
-              </Link>
-              
-              {/* Dropdown Menu */}
-              <div className="relative group py-8">
-                <Link to="/services" className="flex items-center gap-1 hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-white">
-                  Services <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-[#FF6B00]" />
-                </Link>
-                <div className="absolute top-[80px] left-1/2 -translate-x-1/2 w-64 bg-[#111111] border border-gray-800/50 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 p-3 z-50">
-                  <div className="flex flex-col">
-                    <Link to="/services/bim" className="px-5 py-4 text-[11px] uppercase tracking-[0.2em] font-semibold text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors text-left flex items-center justify-between group/link">
-                      BIM & Modélisation 3D
-                      <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover/link:opacity-100 group-hover/link:translate-x-0 transition-all text-[#FF6B00]" />
-                    </Link>
-                    <Link to="/services/diagnostic" className="px-5 py-4 text-[11px] uppercase tracking-[0.2em] font-semibold text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors text-left flex items-center justify-between group/link">
-                      Diagnostic Structurel
-                      <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover/link:opacity-100 group-hover/link:translate-x-0 transition-all text-[#FF6B00]" />
-                    </Link>
-                    <Link to="/services/eurocodes" className="px-5 py-4 text-[11px] uppercase tracking-[0.2em] font-semibold text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors text-left flex items-center justify-between group/link">
-                      Calculs Eurocodes
-                      <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover/link:opacity-100 group-hover/link:translate-x-0 transition-all text-[#FF6B00]" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-
-              <Link to="/formations" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
-                Formations
-              </Link>
-              <Link to="/projets" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
-                Projets
-              </Link>
-              <Link to="/blog" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
-                Blog
-              </Link>
-              <Link to="/quote" className="hover:text-[#FF6B00] transition-colors text-xs uppercase font-bold tracking-widest text-gray-300">
-                Devis
-              </Link>
-            </div>
-
-            {user ? (
-              <div className="flex items-center gap-4 border-l border-white/10 pl-6">
+            {/* Desktop nav */}
+            <nav className="hidden md:flex items-center gap-9">
+              {NAV.map((n) => (
                 <Link
-                  to={getDashboardLink()}
-                  className="flex items-center gap-2 hover:text-[#FF6B00] transition-colors text-sm font-medium"
+                  key={n.to}
+                  to={n.to}
+                  className={`text-[13.5px] transition-opacity hover:opacity-60 ${
+                    textDark ? 'text-[color:var(--color-ink)]' : 'text-white'
+                  } ${pathname === n.to ? 'opacity-60' : ''}`}
                 >
-                  <User className="w-4 h-4" />
-                  {user.nom}
+                  {n.label}
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 hover:text-[#FF6B00] transition-colors text-sm font-medium text-gray-400"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/learn/login"
-                className="px-6 py-2.5 bg-[#FF6B00] text-white text-xs uppercase tracking-widest font-bold rounded-full hover:bg-[#e66000] hover:shadow-lg hover:shadow-orange-500/20 transition-all"
-              >
-                Accès Tower-Learn
-              </Link>
-            )}
-          </div>
+              ))}
+            </nav>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X /> : <Menu />}
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-700">
-            <div className="flex flex-col gap-4">
-              <Link to="/" className="hover:text-[#FFC107] transition-colors">
-                Accueil
-              </Link>
-              <Link to="/about" className="hover:text-[#FFC107] transition-colors">
-                À Propos
-              </Link>
-              <Link to="/services" className="hover:text-[#FFC107] transition-colors">
-                Services
-              </Link>
-              <Link to="/formations" className="hover:text-[#FFC107] transition-colors">
-                Formations
-              </Link>
-              <Link to="/projets" className="hover:text-[#FFC107] transition-colors">
-                Projets
-              </Link>
-              <Link to="/blog" className="hover:text-[#FFC107] transition-colors">
-                Blog
-              </Link>
-              <Link to="/quote" className="hover:text-[#FFC107] transition-colors">
-                Devis
-              </Link>
-
+            <div className="hidden md:flex items-center gap-4">
               {user ? (
                 <>
                   <Link
-                    to={getDashboardLink()}
-                    className="flex items-center gap-2 hover:text-[#FFC107] transition-colors pt-4 border-t border-gray-700"
+                    to={dashboardLink()}
+                    className={`text-[13.5px] hover:opacity-60 ${textDark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}
                   >
-                    <User className="w-4 h-4" />
-                    {user.nom}
+                    {user.nom?.split(' ')[0]}
                   </Link>
                   <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 hover:text-[#FFC107] transition-colors text-left"
+                    onClick={() => { logout(); navigate('/'); }}
+                    className={`text-[13.5px] opacity-50 hover:opacity-100 ${textDark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}
                   >
-                    <LogOut className="w-4 h-4" />
                     Déconnexion
                   </button>
                 </>
               ) : (
                 <Link
                   to="/learn/login"
-                  className="px-4 py-2 bg-[#FFC107] text-[#1A1A2E] rounded-lg hover:bg-[#FFD54F] transition-colors text-center"
+                  className={`group inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-medium transition-colors ${
+                    textDark
+                      ? 'bg-[color:var(--color-ink)] text-[color:var(--color-paper)] hover:bg-[color:var(--color-accent)]'
+                      : 'bg-white text-[color:var(--color-ink)] hover:bg-white/90'
+                  }`}
                 >
-                  Accès Tower-Learn
+                  Espace apprenant
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Link>
               )}
             </div>
+
+            {/* Mobile toggle */}
+            <button
+              className={`md:hidden ${textDark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}
+              onClick={() => setOpen((o) => !o)}
+              aria-label="Menu"
+            >
+              {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
-        )}
-      </nav>
-    </header>
+        </div>
+      </header>
+
+      {/* Mobile overlay */}
+      {open && (
+        <div className="fixed inset-0 z-40 bg-[color:var(--color-paper)] pt-[72px] md:hidden">
+          <nav className="flex flex-col px-6 py-8">
+            {NAV.map((n) => (
+              <Link
+                key={n.to}
+                to={n.to}
+                className="font-[family-name:var(--font-display)] text-3xl py-3 border-b border-[color:var(--color-line)]"
+              >
+                {n.label}
+              </Link>
+            ))}
+            <Link
+              to="/quote"
+              className="font-[family-name:var(--font-display)] text-3xl py-3 border-b border-[color:var(--color-line)]"
+            >
+              Devis
+            </Link>
+            <Link
+              to={user ? dashboardLink() : '/learn/login'}
+              className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-ink)] px-6 py-3.5 text-sm font-medium text-[color:var(--color-paper)]"
+            >
+              {user ? 'Mon espace' : 'Espace apprenant'} <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </nav>
+        </div>
+      )}
+    </>
   );
 }

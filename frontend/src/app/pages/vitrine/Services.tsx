@@ -1,114 +1,58 @@
 import { Link } from 'react-router';
-import { ArrowRight } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { ArrowUpRight } from 'lucide-react';
 import { services } from '../../data/mockData';
+import { useReveal } from '../../hooks/useReveal';
 
 export default function Services() {
+  useReveal();
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#1A1A2E] to-[#16213E] text-white py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="mb-6">Nos Services</h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Des solutions complètes et personnalisées pour tous vos projets d'ingénierie structurelle
-          </p>
-        </div>
+    <div>
+      <Helmet><title>Services — Tower Structure</title></Helmet>
+
+      <section className="mx-auto max-w-[1400px] px-5 pt-20 sm:px-8 lg:px-12 lg:pt-28">
+        <p className="eyebrow">Ingénierie structurelle</p>
+        <h1 className="mt-4 max-w-4xl text-4xl leading-[1.05] sm:text-6xl lg:text-[4.5rem]">
+          Trois expertises,<br />une seule exigence.
+        </h1>
+        <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">
+          Du concept au dossier d'exécution. Chaque mission est menée en BIM, avec des livrables
+          traçables et vérifiables.
+        </p>
       </section>
 
-      {/* Services Grid */}
-      <section className="py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {services.map((service) => (
-              <Link
-                key={service.id}
-                to={`/services/${service.id}`}
-                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-2xl transition-all hover:-translate-y-1"
-              >
-                <img
-                  src={service.image}
-                  alt={service.title}
-                  className="w-full h-64 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="mb-3">{service.title}</h3>
-                  <p className="text-gray-600 mb-4">{service.description}</p>
-                  <span className="text-[#FFC107] hover:underline inline-flex items-center gap-2">
-                    En savoir plus
-                    <ArrowRight className="w-4 h-4" />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+      <section className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+        {services.map((s, i) => (
+          <Link
+            key={s.id}
+            to={`/services/${s.id}`}
+            className="fade-up group grid gap-8 border-t border-[color:var(--color-line)] py-14 md:grid-cols-12 md:items-center"
+          >
+            <div className="md:col-span-1">
+              <span className="font-[family-name:var(--font-display)] text-sm text-[color:var(--color-ink-soft)]">
+                0{i + 1}
+              </span>
+            </div>
+            <div className="md:col-span-5">
+              <h2 className="text-3xl sm:text-4xl">{s.title}</h2>
+              <p className="mt-4 max-w-md text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">{s.description}</p>
+              <span className="arrow-link mt-6 inline-flex text-[color:var(--color-ink)]">
+                En savoir plus <ArrowUpRight className="w-4 h-4" />
+              </span>
+            </div>
+            <div className="reveal-img md:col-span-6 aspect-[16/10] bg-[color:var(--color-line)]">
+              <img src={s.image} alt={s.title} className="h-full w-full object-cover" />
+            </div>
+          </Link>
+        ))}
       </section>
 
-      {/* Process Section */}
-      <section className="py-16 bg-[#F5F6FA]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="mb-4">Notre Processus</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Une méthodologie éprouvée pour garantir la réussite de votre projet
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {[
-              {
-                step: '01',
-                title: 'Analyse des besoins',
-                description: 'Écoute et compréhension de vos objectifs',
-              },
-              {
-                step: '02',
-                title: 'Proposition technique',
-                description: 'Élaboration d\'une solution sur-mesure',
-              },
-              {
-                step: '03',
-                title: 'Réalisation',
-                description: 'Exécution du projet avec suivi régulier',
-              },
-              {
-                step: '04',
-                title: 'Livraison',
-                description: 'Remise des livrables et support',
-              },
-            ].map((item, index) => (
-              <div key={index} className="relative">
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <div className="text-4xl font-bold text-[#FFC107] mb-4">{item.step}</div>
-                  <h3 className="mb-2">{item.title}</h3>
-                  <p className="text-gray-600">{item.description}</p>
-                </div>
-                {index < 3 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                    <ArrowRight className="w-8 h-8 text-[#FFC107]" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-r from-[#1A1A2E] to-[#16213E] text-white rounded-2xl p-12 text-center">
-            <h2 className="mb-4">Besoin d'un devis personnalisé ?</h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              Décrivez-nous votre projet et recevez une proposition détaillée sous 48h
-            </p>
-            <Link
-              to="/quote"
-              className="px-8 py-4 bg-[#FFC107] text-[#1A1A2E] rounded-lg hover:bg-[#FFD54F] transition-colors inline-flex items-center gap-2"
-            >
-              Demander un devis gratuit
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+      <section className="bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
+        <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 lg:px-12">
+          <h2 className="max-w-2xl text-3xl sm:text-5xl">Un besoin spécifique ? Décrivez-le-nous.</h2>
+          <Link to="/quote" className="arrow-link mt-8 inline-flex text-[color:var(--color-paper)]">
+            Demander un devis <ArrowUpRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
     </div>

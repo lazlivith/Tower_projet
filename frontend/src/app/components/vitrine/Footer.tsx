@@ -1,85 +1,82 @@
 import { Link } from 'react-router';
-import { Mail, Phone, MapPin, Facebook, Linkedin, Twitter } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
+
+const COLS = [
+  {
+    title: 'Studio',
+    links: [
+      { to: '/about', label: 'À propos' },
+      { to: '/services', label: 'Services' },
+      { to: '/projets', label: 'Projets' },
+      { to: '/blog', label: 'Journal' },
+    ],
+  },
+  {
+    title: 'Formation',
+    links: [
+      { to: '/formations', label: 'Catalogue' },
+      { to: '/learn/login', label: 'Espace apprenant' },
+      { to: '/quote', label: 'Demander un devis' },
+    ],
+  },
+];
 
 export default function Footer() {
   return (
-    <footer className="bg-[#1A1A2E] text-white mt-auto">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-[#FFC107] rounded flex items-center justify-center">
-                <span className="font-bold text-[#1A1A2E]">TS</span>
-              </div>
-              <span className="font-bold text-xl">Tower Structure</span>
+    <footer className="bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
+      <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-12">
+        {/* Bandeau haut */}
+        <div className="grid gap-12 py-16 md:grid-cols-12 md:py-24">
+          <div className="md:col-span-5">
+            <div className="font-[family-name:var(--font-display)] text-2xl tracking-[0.08em] uppercase">
+              Tower Structure
             </div>
-            <p className="text-gray-400">
-              Expert en ingénierie structurelle et formation BIM
+            <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-white/55">
+              Bureau d'ingénierie structurelle & organisme de formation BIM.
+              De l'étude de structure au dossier d'exécution, et la montée en compétences des équipes.
             </p>
+            <Link
+              to="/quote"
+              className="arrow-link mt-8 text-[color:var(--color-paper)]"
+            >
+              Démarrer un projet <ArrowUpRight className="w-4 h-4" />
+            </Link>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-4 text-[#FFC107]">Navigation</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>
-                <Link to="/" className="hover:text-[#FFC107] transition-colors">
-                  Accueil
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="hover:text-[#FFC107] transition-colors">
-                  À Propos
-                </Link>
-              </li>
-              <li>
-                <Link to="/services" className="hover:text-[#FFC107] transition-colors">
-                  Services
-                </Link>
-              </li>
-              <li>
-                <Link to="/formations" className="hover:text-[#FFC107] transition-colors">
-                  Formations
-                </Link>
-              </li>
+          {COLS.map((c) => (
+            <div key={c.title} className="md:col-span-2">
+              <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">{c.title}</div>
+              <ul className="mt-4 space-y-2.5">
+                {c.links.map((l) => (
+                  <li key={l.label}>
+                    <Link to={l.to} className="text-[14.5px] text-white/70 transition-colors hover:text-white">
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
+          <div className="md:col-span-3">
+            <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/40">Contact</div>
+            <ul className="mt-4 space-y-2.5 text-[14.5px] text-white/70">
+              <li><a href="mailto:contact@tower-structure.ma" className="hover:text-white">contact@tower-structure.ma</a></li>
+              <li><a href="tel:+212522000000" className="hover:text-white">+212 5 22 00 00 00</a></li>
+              <li className="text-white/50">Casablanca — Maroc</li>
             </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-4 text-[#FFC107]">Contact</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                contact@tower-structure.fr
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                +33 1 23 45 67 89
-              </li>
-              <li className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                75 Avenue de Paris, 75016
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-4 text-[#FFC107]">Suivez-nous</h3>
-            <div className="flex gap-4">
-              <a href="#" className="hover:text-[#FFC107] transition-colors">
-                <Facebook className="w-6 h-6" />
-              </a>
-              <a href="#" className="hover:text-[#FFC107] transition-colors">
-                <Linkedin className="w-6 h-6" />
-              </a>
-              <a href="#" className="hover:text-[#FFC107] transition-colors">
-                <Twitter className="w-6 h-6" />
-              </a>
+            <div className="mt-5 flex gap-4 text-[13px] text-white/50">
+              <a href="#" className="hover:text-white">LinkedIn</a>
+              <a href="#" className="hover:text-white">Instagram</a>
+              <a href="#" className="hover:text-white">Behance</a>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2026 Tower Structure. Tous droits réservés.</p>
+        {/* Bas */}
+        <div className="flex flex-col gap-3 border-t border-white/10 py-6 text-[12.5px] text-white/40 sm:flex-row sm:items-center sm:justify-between">
+          <span>© {new Date().getFullYear()} Tower Structure. Tous droits réservés.</span>
+          <span>Ingénierie structurelle · BIM · Formation</span>
         </div>
       </div>
     </footer>

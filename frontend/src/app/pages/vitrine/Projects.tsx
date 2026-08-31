@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Building2 } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
+import { useReveal } from '../../hooks/useReveal';
 
 interface Project {
   id: string;
@@ -11,8 +11,8 @@ interface Project {
   imageUrl: string | null;
   status: 'ONGOING' | 'COMPLETED';
 }
-
 type Tab = 'COMPLETED' | 'ONGOING';
+const PLACEHOLDER = 'https://placehold.co/1200x900/17160f/faf9f6?text=Tower+Structure';
 
 export default function Projects() {
   const [tab, setTab] = useState<Tab>('COMPLETED');
@@ -22,74 +22,81 @@ export default function Projects() {
   useEffect(() => {
     setLoading(true);
     api.get(`/cms/projects?status=${tab}`)
-      .then((res) => setProjects(res.data?.data ?? res.data ?? []))
+      .then((r) => setProjects(r.data?.data ?? r.data ?? []))
       .catch(() => setProjects([]))
       .finally(() => setLoading(false));
   }, [tab]);
 
-  return (
-    <div className="min-h-screen">
-      <Helmet>
-        <title>Projets réalisés & en cours | Tower Structure</title>
-        <meta name="description" content="Découvrez les projets d'ingénierie structurelle réalisés et en cours par Tower Structure." />
-      </Helmet>
+  useReveal([projects]);
 
-      <section className="bg-gradient-to-br from-[#1A1A2E] to-[#16213E] text-white py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="mb-4 text-4xl font-extrabold">Nos Projets</h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Réalisations et chantiers en cours en ingénierie structurelle
-          </p>
+  return (
+    <div>
+      <Helmet><title>Projets — Tower Structure</title></Helmet>
+
+      {/* En-tête éditorial */}
+      <section className="mx-auto max-w-[1400px] px-5 pt-20 sm:px-8 lg:px-12 lg:pt-28">
+        <p className="eyebrow">Réalisations & chantiers</p>
+        <h1 className="mt-4 max-w-4xl text-4xl leading-[1.05] sm:text-6xl lg:text-[4.5rem]">
+          Des structures étudiées,<br />vérifiées, construites.
+        </h1>
+
+        <div className="mt-12 flex gap-8 border-b border-[color:var(--color-line)]">
+          {([['COMPLETED', 'Projets réalisés'], ['ONGOING', 'En cours']] as const).map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => setTab(v)}
+              className={`-mb-px border-b pb-4 text-[13px] uppercase tracking-[0.16em] transition-colors ${
+                tab === v
+                  ? 'border-[color:var(--color-ink)] text-[color:var(--color-ink)]'
+                  : 'border-transparent text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-ink)]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </section>
 
-      <section className="py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center mb-10">
-            <div className="inline-flex rounded-xl border border-gray-200 overflow-hidden">
-              {([['COMPLETED', 'Projets réalisés'], ['ONGOING', 'Projets en cours']] as const).map(([v, label]) => (
-                <button
-                  key={v}
-                  onClick={() => setTab(v)}
-                  className={`px-6 py-2.5 text-sm font-semibold transition-colors ${tab === v ? 'bg-[#1A1A2E] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {loading ? (
-            <p className="text-center text-gray-400 py-12">Chargement…</p>
-          ) : projects.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <Building2 className="w-12 h-12 mx-auto mb-4 opacity-40" />
-              {tab === 'COMPLETED' ? 'Aucun projet réalisé publié pour le moment.' : 'Aucun projet en cours publié pour le moment.'}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {projects.map((p) => (
-                <div key={p.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all">
-                  <div className="h-52 bg-gray-100 relative">
-                    <img
-                      src={toAbsoluteUrl(p.imageUrl) || 'https://placehold.co/600x400/1A1A2E/FFC107?text=Projet'}
-                      alt={p.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.src = 'https://placehold.co/600x400/1A1A2E/FFC107?text=Projet'; }}
-                    />
-                    <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold ${p.status === 'ONGOING' ? 'bg-amber-500 text-white' : 'bg-green-600 text-white'}`}>
-                      {p.status === 'ONGOING' ? 'En cours' : 'Réalisé'}
-                    </span>
-                  </div>
-                  <div className="p-6">
-                    <span className="text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full font-semibold">{p.category}</span>
-                    <h3 className="mt-3 font-bold text-lg text-gray-900">{p.title}</h3>
-                    <p className="mt-2 text-sm text-gray-500 line-clamp-3">{p.description}</p>
-                  </div>
+      {/* Grille */}
+      <section className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+        {loading ? (
+          <p className="py-20 text-center text-[color:var(--color-ink-soft)]">Chargement…</p>
+        ) : projects.length === 0 ? (
+          <p className="py-20 text-center text-[color:var(--color-ink-soft)]">
+            {tab === 'COMPLETED' ? 'Aucun projet réalisé publié.' : 'Aucun projet en cours publié.'}
+          </p>
+        ) : (
+          <div className="grid gap-x-8 gap-y-16 md:grid-cols-2">
+            {projects.map((p, i) => (
+              <article key={p.id} className={`fade-up ${i % 3 === 0 ? 'md:col-span-2' : ''}`}>
+                <div className={`reveal-img w-full bg-[color:var(--color-line)] ${i % 3 === 0 ? 'aspect-[16/9]' : 'aspect-[4/3]'}`}>
+                  <img
+                    src={toAbsoluteUrl(p.imageUrl) || PLACEHOLDER}
+                    alt={p.title}
+                    className="h-full w-full object-cover"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
+                  />
                 </div>
-              ))}
-            </div>
-          )}
+                <div className="mt-5 flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="text-2xl sm:text-3xl">{p.title}</h2>
+                  <span className="text-[12px] uppercase tracking-[0.16em] text-[color:var(--color-ink-soft)]">
+                    {p.category} · {p.status === 'ONGOING' ? 'En cours' : 'Réalisé'}
+                  </span>
+                </div>
+                <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">
+                  {p.description}
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* CTA */}
+      <section className="bg-[color:var(--color-paper-2)]">
+        <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 lg:px-12">
+          <h2 className="text-2xl sm:text-4xl">Votre ouvrage mérite la même rigueur.</h2>
+          <a href="/quote" className="arrow-link mt-6 inline-flex text-[color:var(--color-ink)]">Demander un devis</a>
         </div>
       </section>
     </div>

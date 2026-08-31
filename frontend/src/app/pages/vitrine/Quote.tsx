@@ -1,298 +1,159 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { CheckCircle2, Loader2, ArrowUpRight } from 'lucide-react';
 import api from '../../services/api';
+
+const SERVICES = ['BIM & Modélisation', 'Calculs Eurocodes', 'Diagnostic & Confortement', 'Formation sur mesure', 'Autre'];
+const TYPES = ['Résidentiel', 'Commercial / Tertiaire', 'Industriel', 'Infrastructure / Ouvrage d\'art', 'Santé', 'Autre'];
+
+const empty = {
+  clientName: '', email: '', phone: '', company: '',
+  service: '', projectType: '', budget: '', description: '', urgency: 'normal',
+};
 
 export default function Quote() {
   const navigate = useNavigate();
-  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState(empty);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    clientName: '',
-    email: '',
-    phone: '',
-    company: '',
-    service: '',
-    projectType: '',
-    budget: '',
-    description: '',
-    urgency: 'normal',
-  });
+  const [submitted, setSubmitted] = useState(false);
+
+  const set = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Le backend attend exactement { clientName, email, serviceType, description }.
-    // On agrège les champs détaillés du formulaire dans `description`.
-    const details = [
-      formData.description.trim(),
-      '',
-      `— Type de projet : ${formData.projectType || 'non précisé'}`,
-      `— Budget estimé : ${formData.budget || 'non précisé'}`,
-      `— Urgence : ${formData.urgency}`,
-      formData.company ? `— Entreprise : ${formData.company}` : '',
-      formData.phone ? `— Téléphone : ${formData.phone}` : '',
+    const description = [
+      form.description.trim(), '',
+      `— Type de projet : ${form.projectType || 'non précisé'}`,
+      `— Budget estimé : ${form.budget || 'non précisé'}`,
+      `— Urgence : ${form.urgency}`,
+      form.company ? `— Entreprise : ${form.company}` : '',
+      form.phone ? `— Téléphone : ${form.phone}` : '',
     ].filter(Boolean).join('\n');
 
-    const payload = {
-      clientName: formData.clientName.trim(),
-      email: formData.email.trim(),
-      serviceType: formData.service,
-      description: details,
-    };
-
-    if (payload.description.length < 20) {
+    if (description.length < 20) {
       setError('Merci de détailler votre projet (au moins 20 caractères).');
       return;
     }
 
     setLoading(true);
     try {
-      await api.post('/quotes/request', payload);
+      await api.post('/quotes/request', {
+        clientName: form.clientName.trim(),
+        email: form.email.trim(),
+        serviceType: form.service,
+        description,
+      });
       setSubmitted(true);
-      setTimeout(() => {
-        setSubmitted(false);
-        navigate('/');
-      }, 3000);
+      setTimeout(() => navigate('/'), 3500);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Une erreur est survenue lors de l'envoi. Veuillez réessayer.");
+      setError(err.response?.data?.message || "Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const field = 'w-full border-0 border-b border-[color:var(--color-line)] bg-transparent py-3 text-[15px] outline-none focus:border-[color:var(--color-ink)] transition-colors';
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F6FA]">
-        <div className="bg-white p-12 rounded-2xl shadow-xl text-center max-w-md">
-          <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
-          <h2 className="mb-4">Demande envoyée !</h2>
-          <p className="text-gray-600">
-            Nous avons bien reçu votre demande de devis. Nous vous recontacterons sous 48h.
-          </p>
-        </div>
+      <div className="mx-auto flex min-h-[70vh] max-w-[1400px] flex-col items-center justify-center px-5 text-center">
+        <CheckCircle2 className="mb-6 h-14 w-14 text-[color:var(--color-accent)]" />
+        <h1 className="text-3xl sm:text-4xl">Demande envoyée</h1>
+        <p className="mt-4 max-w-md text-[color:var(--color-ink-soft)]">
+          Merci. Notre équipe revient vers vous sous 48 h avec une première approche.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-[#1A1A2E] to-[#16213E] text-white py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="mb-6">Demander un Devis</h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Décrivez-nous votre projet et recevez une proposition détaillée sous 48h
-          </p>
-        </div>
+    <div>
+      <Helmet><title>Demander un devis — Tower Structure</title></Helmet>
+
+      <section className="mx-auto max-w-[1400px] px-5 pt-20 sm:px-8 lg:px-12 lg:pt-28">
+        <p className="eyebrow">Contact</p>
+        <h1 className="mt-4 max-w-4xl text-4xl leading-[1.05] sm:text-6xl lg:text-[4.5rem]">
+          Décrivez votre projet.
+        </h1>
+        <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">
+          Quelques lignes suffisent pour démarrer. Réponse sous 48 h, sans engagement.
+        </p>
       </section>
 
-      {/* Form */}
-      <section className="py-16">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="clientName" className="block mb-2">
-                  Nom complet *
-                </label>
-                <input
-                  type="text"
-                  id="clientName"
-                  name="clientName"
-                  required
-                  value={formData.clientName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block mb-2">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block mb-2">
-                  Téléphone
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="company" className="block mb-2">
-                  Entreprise
-                </label>
-                <input
-                  type="text"
-                  id="company"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="service" className="block mb-2">
-                  Service souhaité *
-                </label>
-                <select
-                  id="service"
-                  name="service"
-                  required
-                  value={formData.service}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                >
-                  <option value="">Sélectionnez un service</option>
-                  <option value="BIM & Modélisation 3D">BIM & Modélisation 3D</option>
-                  <option value="Diagnostic Structurel">Diagnostic Structurel</option>
-                  <option value="Calculs Eurocodes">Calculs Eurocodes</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="projectType" className="block mb-2">
-                  Type de projet *
-                </label>
-                <select
-                  id="projectType"
-                  name="projectType"
-                  required
-                  value={formData.projectType}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                >
-                  <option value="">Sélectionnez un type</option>
-                  <option value="Résidentiel">Résidentiel</option>
-                  <option value="Commercial">Commercial</option>
-                  <option value="Infrastructure">Infrastructure</option>
-                  <option value="Industriel">Industriel</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="budget" className="block mb-2">
-                  Budget estimé
-                </label>
-                <select
-                  id="budget"
-                  name="budget"
-                  value={formData.budget}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                >
-                  <option value="">Sélectionnez un budget</option>
-                  <option value="<10000">&lt; 10 000 €</option>
-                  <option value="10000-20000">10 000 - 20 000 €</option>
-                  <option value="20000-50000">20 000 - 50 000 €</option>
-                  <option value="50000-100000">50 000 - 100 000 €</option>
-                  <option value=">100000">&gt; 100 000 €</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="urgency" className="block mb-2">
-                  Urgence
-                </label>
-                <select
-                  id="urgency"
-                  name="urgency"
-                  value={formData.urgency}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                >
-                  <option value="normal">Normal</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="très urgent">Très urgent</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label htmlFor="description" className="block mb-2">
-                  Description du projet *
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  required
-                  rows={6}
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Décrivez votre projet en détail..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="mt-6 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm text-center">
-                {error}
-              </div>
-            )}
-
-            <div className="mt-8 text-center">
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-8 py-4 bg-[#FFC107] text-[#1A1A2E] rounded-lg hover:bg-[#FFD54F] transition-colors inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {loading ? 'Envoi en cours…' : 'Envoyer la demande'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      {/* Info Section */}
-      <section className="py-16 bg-[#F5F6FA]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="text-4xl mb-4">⚡</div>
-              <h3 className="mb-2">Réponse Rapide</h3>
-              <p className="text-gray-600">Devis détaillé sous 48h</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl mb-4">💼</div>
-              <h3 className="mb-2">Sur Mesure</h3>
-              <p className="text-gray-600">Solution adaptée à vos besoins</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl mb-4">🤝</div>
-              <h3 className="mb-2">Sans Engagement</h3>
-              <p className="text-gray-600">Devis gratuit et sans obligation</p>
-            </div>
+      <section className="mx-auto max-w-[900px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+        <form onSubmit={handleSubmit} className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+          <div>
+            <label className="eyebrow">Nom complet *</label>
+            <input name="clientName" required value={form.clientName} onChange={set} className={field} />
           </div>
-        </div>
+          <div>
+            <label className="eyebrow">Email *</label>
+            <input type="email" name="email" required value={form.email} onChange={set} className={field} />
+          </div>
+          <div>
+            <label className="eyebrow">Téléphone</label>
+            <input name="phone" value={form.phone} onChange={set} className={field} />
+          </div>
+          <div>
+            <label className="eyebrow">Entreprise</label>
+            <input name="company" value={form.company} onChange={set} className={field} />
+          </div>
+          <div>
+            <label className="eyebrow">Service *</label>
+            <select name="service" required value={form.service} onChange={set} className={field}>
+              <option value="">—</option>
+              {SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="eyebrow">Type de projet</label>
+            <select name="projectType" value={form.projectType} onChange={set} className={field}>
+              <option value="">—</option>
+              {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="eyebrow">Budget estimé</label>
+            <select name="budget" value={form.budget} onChange={set} className={field}>
+              <option value="">—</option>
+              <option>&lt; 50 000 DH</option>
+              <option>50 000 – 150 000 DH</option>
+              <option>150 000 – 500 000 DH</option>
+              <option>&gt; 500 000 DH</option>
+            </select>
+          </div>
+          <div>
+            <label className="eyebrow">Échéance</label>
+            <select name="urgency" value={form.urgency} onChange={set} className={field}>
+              <option value="normal">Standard</option>
+              <option value="urgent">Urgent</option>
+              <option value="tres-urgent">Très urgent</option>
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="eyebrow">Description du projet *</label>
+            <textarea name="description" required rows={5} value={form.description} onChange={set}
+              className={field + ' resize-none'} placeholder="Nature de l'ouvrage, surface, contraintes, attentes…" />
+          </div>
+
+          {error && <p className="sm:col-span-2 text-sm text-red-600">{error}</p>}
+
+          <div className="sm:col-span-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="group inline-flex items-center gap-2 rounded-full bg-[color:var(--color-ink)] px-8 py-4 text-[13.5px] font-medium text-[color:var(--color-paper)] transition-colors hover:bg-[color:var(--color-accent)] disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />}
+              {loading ? 'Envoi…' : 'Envoyer la demande'}
+            </button>
+          </div>
+        </form>
       </section>
     </div>
   );
