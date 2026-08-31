@@ -1,0 +1,386 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---- ENUMS (Sécurité et contraintes de valeurs) ----
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  MANAGER
+}
+
+enum PaymentPlan {
+  FULL
+  THREE_INSTALLMENTS
+}
+
+enum AccessStatus {
+  ACTIVE
+  SUSPENDED
+  COMPLETED
+}
+
+enum PaymentMethod {
+  STRIPE
+  MOBILE_MONEY
+  VIREMENT
+  CHEQUE
+}
+
+enum PaymentStatus {
+  COMPLETED
+  PENDING
+}
+
+enum NotificationType {
+  GRADE
+  ASSIGNMENT
+  SYSTEM
+}
+
+enum SubmissionStatus {
+  PENDING
+  GRADED
+}
+
+enum QuoteStatus {
+  PENDING
+  ACCEPTED
+  CONTACTED
+  REJECTED
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// ---- TABLES (Modèles relationnels) ----
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  nom          String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(150)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         Role     @default(STUDENT)
+  isActive     Boolean  @default(true) @map("is_active") // Permet au Superadmin de bloquer/débloquer le compte
+  isFirstLogin Boolean  @default(true) @map("is_first_login")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  enrollments         Enrollment[]         @relation("StudentEnrollments")
+  validatedPayments   Payment[]            @relation("ManagerValidations")
+  progressions        Progress[]
+  liveSessions        LiveSession[]        @relation("InstructorSessions")
+  classrooms          Classroom[]          @relation("InstructorClasses")
+  messagesSent        Message[]            @relation("SentMessages")
+  messagesReceived    Message[]            @relation("ReceivedMessages")
+  notifications       Notification[]
+  certificates        Certificate[]
+  submissions         Submission[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  quizAttempts        QuizAttempt[]
+
+  @@map("users")
+}
+
+model Course {
+  id            String   @id @default(uuid()) @db.Uuid
+  title         String   @db.VarChar(255)
+  description   String   @db.Text
+  price         Decimal  @db.Decimal(10, 2)
+  imageUrl      String?  @map("image_url") @db.VarChar(500)
+  level         String?  @default("Débutant") @db.VarChar(50)
+  durationHours Int?     @default(0) @map("duration_hours")
+  isPublished   Boolean  @default(false) @map("is_published")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  lessons      ModuleLesson[]
+  enrollments  Enrollment[]
+  liveSessions LiveSession[]
+  classrooms   Classroom[]
+  certificates Certificate[]
+  assignments  Assignment[]
+
+  @@map("courses")
+}
+
+model ModuleLesson {
+  id            String  @id @default(uuid()) @db.Uuid
+  courseId      String  @map("course_id") @db.Uuid
+  title         String  @db.VarChar(255)
+  videoUrl      String? @map("video_url") @db.VarChar(500)
+  documentUrl   String? @map("document_url") @db.VarChar(255)
+  sequenceOrder Int     @map("sequence_order")
+
+  // Relations
+  course       Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progressions Progress[]
+  quizzes      Quiz[]
+
+  @@map("modules_lessons")
+}
+
+model Classroom {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(100) // Ex: "Promotion Juin 2026", "Salle des Nouveaux"
+  courseId     String   @map("course_id") @db.Uuid // Relation 1-to-N : Une formation = Plusieurs classes
+  instructorId String?  @map("instructor_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor  User?        @relation("InstructorClasses", fields: [instructorId], references: [id], onDelete: SetNull)
+  enrollments Enrollment[]
+  quizzes     Quiz[]
+
+  @@map("classrooms")
+}
+
+model Enrollment {
+  id             String       @id @default(uuid()) @db.Uuid
+  studentId      String       @map("student_id") @db.Uuid
+  classroomId    String       @map("classroom_id") @db.Uuid // Rattachement direct à la classe
+  courseId       String       @map("course_id") @db.Uuid
+  paymentPlan    PaymentPlan  @map("payment_plan")
+  accessStatus   AccessStatus @default(SUSPENDED) @map("access_status")
+  nextPaymentDue DateTime?    @map("next_payment_due") @db.Date
+  hoursSpent     Float        @default(0) @map("hours_spent") // cumul du temps de présence (heures) — cf. certificat
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  student   User      @relation("StudentEnrollments", fields: [studentId], references: [id], onDelete: Cascade)
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  payments  Payment[]
+
+  @@unique([studentId, courseId]) // Un élève ne s'inscrit qu'une seule fois à une formation
+  @@map("enrollments")
+}
+
+model Payment {
+  id            String        @id @default(uuid()) @db.Uuid
+  enrollmentId  String        @map("enrollment_id") @db.Uuid
+  amount        Decimal       @db.Decimal(10, 2)
+  paymentMethod PaymentMethod @map("payment_method")
+  paymentStatus PaymentStatus @map("payment_status")
+  validatedBy   String?       @map("validated_by") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  manager    User?      @relation("ManagerValidations", fields: [validatedBy], references: [id], onDelete: SetNull)
+
+  @@map("payments")
+}
+
+model Progress {
+  id               String   @id @default(uuid()) @db.Uuid
+  studentId        String   @map("student_id") @db.Uuid
+  lessonId         String   @map("lesson_id") @db.Uuid
+  isCompleted      Boolean  @default(false) @map("is_completed")
+  videoProgress    Int      @default(0) @map("video_progress") // % max de vidéo visionné (0-100)
+  timeSpentSeconds Int      @default(0) @map("time_spent_seconds") // temps de présence cumulé sur la leçon
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  student User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson  ModuleLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, lessonId]) // Clé unique composite pour éviter les doublons de progression
+  @@map("progress")
+}
+
+model LiveSession {
+  id           String   @id @default(uuid()) @db.Uuid
+  courseId     String   @map("course_id") @db.Uuid
+  instructorId String   @map("instructor_id") @db.Uuid
+  title        String   @db.VarChar(255)
+  jitsiUrl     String   @map("jitsi_url") @db.VarChar(255)
+  scheduledAt  DateTime @map("scheduled_at") @db.Timestamp
+  duration     Int?     @default(120)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor User   @relation("InstructorSessions", fields: [instructorId], references: [id], onDelete: Cascade)
+}
+
+// ---- NOUVEAUX MODÈLES (DASHBOARDS) ----
+
+model Message {
+  id         String   @id @default(uuid()) @db.Uuid
+  senderId   String   @map("sender_id") @db.Uuid
+  receiverId String   @map("receiver_id") @db.Uuid
+  content    String   @db.Text
+  isRead     Boolean  @default(false) @map("is_read")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  message   String           @db.VarChar(255)
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamp
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Certificate {
+  id        String   @id @default(uuid()) @db.Uuid
+  studentId String   @map("student_id") @db.Uuid
+  courseId  String   @map("course_id") @db.Uuid
+  pdfUrl    String   @map("pdf_url") @db.VarChar(255)
+  score     Decimal  @db.Decimal(5, 2)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("certificates")
+}
+
+model Assignment {
+  id          String   @id @default(uuid()) @db.Uuid
+  courseId    String   @map("course_id") @db.Uuid
+  title       String   @db.VarChar(255)
+  description String   @db.Text
+  dueDate     DateTime @map("due_date") @db.Timestamp
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@map("assignments")
+}
+
+model Submission {
+  id           String           @id @default(uuid()) @db.Uuid
+  assignmentId String           @map("assignment_id") @db.Uuid
+  studentId    String           @map("student_id") @db.Uuid
+  fileUrl      String           @map("file_url") @db.VarChar(255)
+  grade        Decimal?         @db.Decimal(5, 2)
+  status       SubmissionStatus @default(PENDING)
+  submittedAt  DateTime         @default(now()) @map("submitted_at") @db.Timestamp
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("submissions")
+}
+
+/// Quiz importé par l'instructeur (parser Excel). Les questions sont stockées en JSON :
+/// [{ question, options: { A, B, C, D }, correctAnswer: "A" }]
+model Quiz {
+  id          String   @id @default(uuid()) @db.Uuid
+  classroomId String   @map("classroom_id") @db.Uuid
+  lessonId    String?  @map("lesson_id") @db.Uuid // Quiz rattaché à un chapitre (déblocage séquentiel)
+  title       String   @default("Quiz") @db.VarChar(255)
+  questions   Json
+  passScore   Int      @default(70) @map("pass_score") // seuil de validation en %
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  classroom Classroom     @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  lesson    ModuleLesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  attempts  QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizAttempt {
+  id        String   @id @default(uuid()) @db.Uuid
+  quizId    String   @map("quiz_id") @db.Uuid
+  studentId String   @map("student_id") @db.Uuid
+  score     Float // pourcentage obtenu (0-100)
+  passed    Boolean  @default(false)
+  answers   Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  quiz    Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_attempts")
+}
+
+model Quote {
+  id          String      @id @default(uuid()) @db.Uuid
+  clientName  String      @map("client_name") @db.VarChar(150)
+  email       String      @db.VarChar(150)
+  serviceType String      @map("service_type") @db.VarChar(100)
+  description String      @db.Text
+  status      QuoteStatus @default(PENDING)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamp
+
+  @@map("quotes")
+}
+
+model Publication {
+  id        String            @id @default(uuid()) @db.Uuid
+  title     String            @db.VarChar(255)
+  content   String            @db.Text
+  imageUrl  String?           @map("image_url") @db.VarChar(255)
+  status    PublicationStatus @default(DRAFT)
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamp
+
+  @@map("publications")
+}
+
+model Project {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @db.VarChar(255)
+  description String   @db.Text
+  imageUrl    String?  @map("image_url") @db.VarChar(255)
+  category    String   @db.VarChar(100)
+  isPublished Boolean  @default(false) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  @@map("projects")
+}
+
+// ---- SÉCURITÉ AUTH ----
+
+/**
+ * Stocke les refresh tokens pour permettre la rotation sécurisée des sessions.
+ * Chaque token est haché (sha256) avant persistance — le cookie contient le token brut.
+ */
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  tokenHash String   @unique @map("token_hash") @db.VarChar(255) // SHA-256 du token brut
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamp
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+/// Jetons de réinitialisation de mot de passe — hachés (sha256) avant persistance.
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.VarChar(255)
+  userId    String    @map("user_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamp
+  usedAt    DateTime? @map("used_at") @db.Timestamp
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}

@@ -1,0 +1,14 @@
+# Normalise les fins de ligne — LF dans le dépôt
+* text=auto eol=lf
+
+# Fichiers qui doivent impérativement rester en LF
+*.sh    text eol=lf
+Dockerfile text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+
+# Binaires
+*.png binary
+*.jpg binary
+*.pdf binary
+*.ico binary

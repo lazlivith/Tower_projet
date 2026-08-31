@@ -1,0 +1,26 @@
+# Dépendances
+node_modules/
+
+# Variables d'environnement
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+
+# Fichiers générés par l'app
+backend/uploads/pdfs/
+backend/uploads/images/
+backend/uploads/documents/
+backend/generated/
+
+# Logs / divers
+*.log
+npm-debug.log*
+.DS_Store
+coverage/
+.vscode/*
+!.vscode/extensions.json
+.idea/

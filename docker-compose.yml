@@ -1,0 +1,41 @@
+# Stack complète en local : PostgreSQL + API + Front (nginx).
+# Usage : docker compose up --build   puis   docker compose exec api npm run seed
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tower
+      POSTGRES_PASSWORD: tower
+      POSTGRES_DB: tower_db
+    ports: ['5432:5432']
+    volumes: ['pgdata:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U tower']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://tower:tower@db:5432/tower_db?schema=public
+      JWT_SECRET: dev-secret-key-min-32-characters-long-xx
+      FRONTEND_URL: http://localhost:8080
+      NODE_ENV: production
+      PORT: 5000
+    ports: ['5000:5000']
+
+  front:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:5000/api
+    depends_on: [api]
+    ports: ['8080:80']
+
+volumes:
+  pgdata:
