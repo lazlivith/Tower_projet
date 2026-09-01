@@ -25,6 +25,7 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
   const [open, setOpen] = useState(false);
   const [mobileServices, setMobileServices] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [atFooter, setAtFooter] = useState(false);
 
   const overlayHome = pathname === '/';
 
@@ -34,6 +35,18 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Efface l'en-tête à l'approche du pied de page
+  useEffect(() => {
+    const sentinel = document.getElementById('footer-sentinel');
+    if (!sentinel || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      ([e]) => setAtFooter(e.isIntersecting),
+      { rootMargin: '0px 0px -40px 0px', threshold: 0 }
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [pathname]);
 
   useEffect(() => { setOpen(false); setMobileServices(false); }, [pathname]);
 
@@ -51,9 +64,11 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 will-change-transform ${
+          atFooter ? 'header-hidden' : ''
+        } ${
           solid
-            ? 'bg-[color:var(--color-paper)]/85 backdrop-blur-md border-b border-[color:var(--color-line)] shadow-[0_1px_20px_-10px_rgba(0,0,0,0.15)]'
+            ? 'bg-[color:var(--color-paper)]/80 backdrop-blur-xl border-b border-[color:var(--color-line)] shadow-[0_1px_24px_-10px_rgba(0,0,0,0.35)]'
             : 'bg-transparent'
         }`}
       >

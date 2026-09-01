@@ -245,27 +245,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---------- CTA ---------- */}
-      <section className="relative overflow-hidden bg-[color:var(--paper-2)]">
-        <div className="grain absolute inset-0" />
-        <div
-          className="absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(56,189,248,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,0.7) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        />
-        <div className="relative mx-auto max-w-[1400px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28">
-          <h2 className="max-w-3xl text-3xl sm:text-5xl lg:text-6xl">
-            Un projet de structure&nbsp;? <span className="grad-text">Parlons-en.</span>
-          </h2>
-          <p className="mt-5 max-w-xl text-[14.5px] text-[color:var(--ink-soft)]">
-            Décrivez votre projet, nous revenons vers vous sous 48 h avec une première approche.
-          </p>
-          <Link to="/quote" className="btn btn-solid mt-9">Demander un devis <ArrowUpRight className="w-4 h-4" /></Link>
-        </div>
-      </section>
+      {/* La carte CTA finale est fournie globalement par le Footer */}
     </div>
   );
 }
