@@ -56,7 +56,7 @@ export default function Blog() {
               </div>
               <div>
                 <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.14em] text-[color:var(--color-ink-soft)]">
-                  <span className="chip">{lead.category || 'Article'}</span>
+                  <span className="chip chip-blue">{lead.category || 'Article'}</span>
                   {new Date(lead.createdAt).toLocaleDateString('fr-FR')}
                 </div>
                 <h2 className="mt-4 text-2xl sm:text-3xl">{lead.title}</h2>
@@ -74,7 +74,7 @@ export default function Blog() {
                         onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }} />
                     </div>
                     <div className="mt-3.5 flex items-center gap-2 text-[10.5px] uppercase tracking-[0.14em] text-[color:var(--color-ink-soft)]">
-                      <span className="chip">{p.category || 'Article'}</span>
+                      <span className="chip chip-blue">{p.category || 'Article'}</span>
                       {new Date(p.createdAt).toLocaleDateString('fr-FR')}
                     </div>
                     <h3 className="mt-2 text-[16px] font-medium leading-snug">{p.title}</h3>

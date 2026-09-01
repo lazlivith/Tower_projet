@@ -15,7 +15,14 @@ interface Course {
   imageUrl?: string | null;
   priceLabel?: string | null;
 }
-const PLACEHOLDER = 'https://placehold.co/900x700/16150f/f7f5f0?text=Formation';
+const PLACEHOLDER = 'https://placehold.co/900x700/0d1117/38bdf8?text=Formation';
+
+const levelChip = (lvl?: string) => {
+  const l = (lvl || '').toLowerCase();
+  if (l.includes('avanc')) return 'chip-amber';
+  if (l.includes('interm')) return 'chip-green';
+  return 'chip-blue';
+};
 
 export default function Formations() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -59,14 +66,13 @@ export default function Formations() {
                 <div className="card-media aspect-[4/3]">
                   <img src={toAbsoluteUrl(c.imageUrl) || PLACEHOLDER} alt={c.title}
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }} />
+                  <span className={`chip ${levelChip(c.level)} absolute left-3 top-3`}>{c.level || 'Tous niveaux'}</span>
+                  {c.durationHours ? <span className="chip chip-glass absolute right-3 top-3">{c.durationHours} h</span> : null}
                 </div>
-                <div className="mt-4">
-                  <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--color-ink-soft)]">
-                    {c.level || 'Tous niveaux'}{c.durationHours ? ` · ${c.durationHours} h` : ''}
-                  </div>
-                  <h2 className="mt-1.5 text-lg font-medium leading-snug sm:text-xl">{c.title}</h2>
-                  <p className="mt-2 line-clamp-2 text-[13.5px] leading-relaxed text-[color:var(--color-ink-soft)]">{c.description}</p>
-                  <div className="mt-3 flex items-center gap-2 text-[13px] font-[family-name:var(--font-display)] text-[color:var(--color-accent)]">
+                <div className="card-body">
+                  <h2 className="text-[15px] font-medium leading-snug sm:text-base">{c.title}</h2>
+                  <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-[color:var(--ink-soft)]">{c.description}</p>
+                  <div className="mt-3 flex items-center gap-2 text-[13px] font-[family-name:var(--font-display)] text-[color:var(--accent-2)]">
                     {c.priceLabel || `${Number(c.price)?.toLocaleString('fr-FR')} MAD`}
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </div>
@@ -77,7 +83,7 @@ export default function Formations() {
         )}
       </section>
 
-      <section className="relative overflow-hidden bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
+      <section className="relative overflow-hidden bg-[color:var(--band)] text-[color:var(--band-fg)]">
         <div className="grain absolute inset-0" />
         <div className="relative mx-auto max-w-[1400px] px-5 py-20 sm:px-8 lg:px-12">
           <h2 className="max-w-2xl text-3xl sm:text-5xl">Former une équipe entière&nbsp;?</h2>

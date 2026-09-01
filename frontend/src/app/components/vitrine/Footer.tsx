@@ -23,7 +23,7 @@ const COLS = [
 
 export default function Footer() {
   return (
-    <footer className="bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
+    <footer className="bg-[color:var(--band)] text-[color:var(--band-fg)]">
       <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-12">
         {/* Bandeau haut */}
         <div className="grid gap-12 py-16 md:grid-cols-12 md:py-24">
@@ -37,7 +37,7 @@ export default function Footer() {
             </p>
             <Link
               to="/quote"
-              className="arrow-link mt-8 text-[color:var(--color-paper)]"
+              className="arrow-link mt-8 text-[color:var(--band-fg)]"
             >
               Démarrer un projet <ArrowUpRight className="w-4 h-4" />
             </Link>

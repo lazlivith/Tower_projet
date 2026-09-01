@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, MapPin, Layers } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
 import { useReveal } from '../../hooks/useReveal';
 
@@ -49,7 +49,7 @@ export default function Projects() {
               onClick={() => setTab(v)}
               className={`rounded-full px-5 py-2 text-[12.5px] font-medium tracking-wide transition-colors ${
                 tab === v
-                  ? 'bg-[color:var(--color-ink)] text-[color:var(--color-paper)]'
+                  ? 'bg-[color:var(--band)] text-[color:var(--band-fg)]'
                   : 'border border-[color:var(--color-line)] text-[color:var(--color-ink-soft)] hover:border-[color:var(--color-ink)] hover:text-[color:var(--color-ink)]'
               }`}
             >
@@ -67,23 +67,26 @@ export default function Projects() {
             {tab === 'COMPLETED' ? 'Aucun projet réalisé publié.' : 'Aucun projet en cours publié.'}
           </p>
         ) : (
-          <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((p, i) => (
               <Link to={`/projets/${p.id}`} key={p.id} className={`card fade-up block ${i % 5 === 0 ? 'sm:col-span-2 lg:col-span-2' : ''}`}>
                 <div className={`card-media ${i % 5 === 0 ? 'aspect-[16/9]' : 'aspect-[4/3]'}`}>
                   <img src={toAbsoluteUrl(p.imageUrl) || PLACEHOLDER} alt={p.title}
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }} />
-                </div>
-                <div className="mt-4 flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-medium leading-snug sm:text-xl">{p.title}</h2>
-                    <p className="mt-1 text-[13px] text-[color:var(--color-ink-soft)]">
-                      {p.category}{p.location ? ` · ${p.location}` : ''}
-                    </p>
-                  </div>
-                  <span className={`chip shrink-0 ${p.status === 'ONGOING' ? '' : ''}`}>
+                  <span className={`chip chip-glass absolute right-3 top-3`}>
                     {p.status === 'ONGOING' ? 'En cours' : 'Réalisé'}
                   </span>
+                  <div className="card-reveal flex flex-wrap items-center gap-x-4 gap-y-1 text-white">
+                    <span className="inline-flex items-center gap-1.5 text-[12px]"><Layers className="h-3.5 w-3.5 text-[color:var(--accent)]" /> {p.category}</span>
+                    {p.location && <span className="inline-flex items-center gap-1.5 text-[12px]"><MapPin className="h-3.5 w-3.5 text-[color:var(--accent-2)]" /> {p.location}</span>}
+                  </div>
+                </div>
+                <div className="card-body flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-[15px] font-medium leading-snug sm:text-base">{p.title}</h2>
+                    <p className="mt-1 text-[12.5px] text-[color:var(--ink-soft)]">{p.category}</p>
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 shrink-0 text-[color:var(--ink-soft)]" />
                 </div>
               </Link>
             ))}

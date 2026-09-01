@@ -74,14 +74,14 @@ export default function About() {
         </div>
       </section>
 
-      <section className="bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
+      <section className="bg-[color:var(--band)] text-[color:var(--band-fg)]">
         <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 lg:px-12">
           <h2 className="max-w-2xl text-3xl sm:text-5xl">Travailler avec le studio</h2>
           <div className="mt-8 flex flex-wrap gap-6">
             <Link to="/quote" className="btn btn-light">
               Demander une étude <ArrowUpRight className="w-4 h-4" />
             </Link>
-            <Link to="/formations" className="arrow-link text-[color:var(--color-paper)]">Voir les formations</Link>
+            <Link to="/formations" className="arrow-link text-[color:var(--band-fg)]">Voir les formations</Link>
           </div>
         </div>
       </section>

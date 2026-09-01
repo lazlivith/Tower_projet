@@ -62,10 +62,10 @@ export default function Services() {
         </div>
       </section>
 
-      <section className="bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
+      <section className="bg-[color:var(--band)] text-[color:var(--band-fg)]">
         <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 lg:px-12">
           <h2 className="max-w-2xl text-3xl sm:text-5xl">Un besoin spécifique&nbsp;? Décrivez-le-nous.</h2>
-          <Link to="/quote" className="arrow-link mt-8 inline-flex text-[color:var(--color-paper)]">
+          <Link to="/quote" className="arrow-link mt-8 inline-flex text-[color:var(--band-fg)]">
             Demander une étude de structure <ArrowUpRight className="w-4 h-4" />
           </Link>
         </div>

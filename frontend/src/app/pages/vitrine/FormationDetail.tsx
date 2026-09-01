@@ -165,7 +165,7 @@ export default function FormationDetail() {
       )}
 
       {/* CTA */}
-      <section className="bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
+      <section className="bg-[color:var(--band)] text-[color:var(--band-fg)]">
         <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 lg:px-12">
           <h2 className="max-w-2xl text-2xl sm:text-4xl">Prêt à monter en compétences&nbsp;?</h2>
           <button onClick={enroll} className="btn btn-light mt-8">

@@ -1,37 +1,95 @@
 /* ==========================================================================
-   Vitrine Tower Structure — design system
-   Minimalisme premium, dense et contrasté · sans-serif géométrique
+   Vitrine Tower Structure — thème « Dark Mode ingénierie » (+ clair)
+   Basculé par [data-theme] sur .vitrine · sombre par défaut
    ========================================================================== */
 
 @theme {
-  --color-paper: #f7f5f0;      /* fond principal, blanc cassé chaud */
-  --color-paper-2: #edeae1;    /* fond de section alterné */
-  --color-ink: #16150f;        /* texte / sections sombres */
-  --color-ink-2: #23221a;      /* surface sombre légèrement relevée (cartes sur fond ink) */
-  --color-ink-soft: #55524a;   /* texte secondaire */
-  --color-line: #ddd9cd;       /* filets / bordures fines */
-  --color-accent: #bd6b32;     /* ocre brûlé — accent assumé mais maîtrisé */
-  --color-accent-soft: #f0e2d5;
-
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
-
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ---- Palette SOMBRE (défaut) ---- */
+.vitrine,
+.vitrine[data-theme='dark'] {
+  --paper: #0d1117;      /* fond principal */
+  --paper-2: #161b22;    /* fond de section */
+  --surface: #1e293b;    /* cartes */
+  --ink: #ffffff;        /* titres */
+  --ink-soft: #94a3b8;   /* corps de texte */
+  --line: rgba(255, 255, 255, 0.10);
+  --accent: #38bdf8;     /* bleu néon — BIM / techno */
+  --accent-2: #f59e0b;   /* ambre chantier — hover / sécurité */
+  --glow: rgba(56, 189, 248, 0.22);
+  --grid: rgba(56, 189, 248, 0.05);
+  --glass: rgba(255, 255, 255, 0.05);
+  --band: #0a2436;        /* bandeau contrasté (CTA) */
+  --band-fg: #ffffff;
+  color-scheme: dark;
+}
+
+/* ---- Palette CLAIRE ---- */
+.vitrine[data-theme='light'] {
+  --paper: #f7f6f2;
+  --paper-2: #eeece4;
+  --surface: #ffffff;
+  --ink: #14161c;
+  --ink-soft: #55606f;
+  --line: rgba(15, 23, 42, 0.12);
+  --accent: #0284c7;
+  --accent-2: #d97706;
+  --glow: rgba(2, 132, 199, 0.16);
+  --grid: rgba(2, 132, 199, 0.05);
+  --glass: rgba(15, 23, 42, 0.04);
+  --band: #10161f;
+  --band-fg: #f4f6fa;
+  color-scheme: light;
+}
+
+/* Alias legacy (anciennes classes bg-[color:var(--color-paper)] etc.) */
 .vitrine {
-  background: var(--color-paper);
-  color: var(--color-ink);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--surface);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* ---- Base ---- */
+.vitrine {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
+
+/* Motif de grille structurelle (papier millimétré / blueprint) */
+.vitrine::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 120% 80% at 50% 0%, #000 35%, transparent 85%);
+}
+.vitrine > * { position: relative; z-index: 1; }
 
 .vitrine h1, .vitrine h2, .vitrine h3, .vitrine h4 {
   font-family: var(--font-display);
   font-weight: 500;
   letter-spacing: -0.015em;
   line-height: 1.06;
+  color: var(--ink);
 }
 
 /* ---- Label de section ---- */
@@ -44,14 +102,16 @@
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-accent);
+  color: var(--accent);
 }
-.eyebrow::before {
-  content: '';
-  width: 1.6rem;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.6;
+.eyebrow::before { content: ''; width: 1.6rem; height: 1px; background: currentColor; opacity: 0.7; }
+
+/* ---- Texte dégradé (titres percutants) ---- */
+.grad-text {
+  background: linear-gradient(100deg, var(--ink) 0%, var(--accent) 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 /* ---- Boutons ---- */
@@ -62,25 +122,27 @@
   border-radius: 999px;
   padding: 0.85rem 1.6rem;
   font-size: 0.82rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.01em;
-  transition: transform 0.35s var(--ease-out-expo), background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
-  will-change: transform;
+  transition: transform 0.35s var(--ease-out-expo), background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 .btn svg { transition: transform 0.35s var(--ease-out-expo); }
 .btn:hover svg { transform: translate(2px, -2px); }
 .btn:active { transform: scale(0.97); }
 
-.btn-solid { background: var(--color-ink); color: var(--color-paper); }
-.btn-solid:hover { background: var(--color-accent); box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--color-accent) 70%, transparent); }
+/* Principal — ambre chantier + lueur */
+.btn-solid { background: var(--accent-2); color: #0b0b0b; }
+.btn-solid:hover { box-shadow: 0 12px 34px -10px color-mix(in srgb, var(--accent-2) 65%, transparent); filter: brightness(1.05); }
 
-.btn-light { background: #fff; color: var(--color-ink); }
-.btn-light:hover { background: var(--color-accent); color: #fff; }
+/* Clair sur fond sombre */
+.btn-light { background: var(--ink); color: var(--paper); }
+.btn-light:hover { background: var(--accent-2); color: #0b0b0b; box-shadow: 0 12px 34px -12px color-mix(in srgb, var(--accent-2) 60%, transparent); }
 
-.btn-outline { border: 1px solid var(--color-line); color: var(--color-ink); }
-.btn-outline:hover { border-color: var(--color-ink); background: var(--color-ink); color: var(--color-paper); }
+/* Secondaire — contour néon */
+.btn-outline { border: 1px solid var(--accent); color: var(--accent); background: transparent; }
+.btn-outline:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: 0 0 0 1px var(--accent), 0 10px 30px -12px var(--glow); }
 
-/* ---- Lien fléché : soulignement qui se dessine ---- */
+/* ---- Lien fléché ---- */
 .arrow-link {
   position: relative;
   display: inline-flex;
@@ -91,62 +153,97 @@
 }
 .arrow-link::after {
   content: '';
-  position: absolute;
-  left: 0; bottom: 0;
+  position: absolute; left: 0; bottom: 0;
   width: 100%; height: 1px;
   background: currentColor;
-  transform: scaleX(1);
-  transform-origin: right;
-  transition: transform 0.4s var(--ease-out-expo), background-color 0.3s ease;
+  transform: scaleX(1); transform-origin: right;
+  transition: transform 0.4s var(--ease-out-expo);
 }
-.arrow-link:hover { color: var(--color-accent); }
+.arrow-link:hover { color: var(--accent); }
 .arrow-link:hover::after { transform: scaleX(0); }
 .arrow-link svg { transition: transform 0.35s var(--ease-out-expo); }
 .arrow-link:hover svg { transform: translate(3px, -3px); }
 
-/* ---- Chip / étiquette ---- */
+/* ---- Badges d'étiquette ---- */
 .chip {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
   padding: 0.28rem 0.7rem;
-  font-size: 0.68rem;
-  font-weight: 600;
+  font-size: 0.66rem;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  background: var(--color-accent-soft);
-  color: color-mix(in srgb, var(--color-accent) 85%, black);
+  border: 1px solid transparent;
 }
-.chip-dark { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.75); }
+.chip-blue  { background: color-mix(in srgb, var(--accent) 15%, transparent);   color: var(--accent);   border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.chip-amber { background: color-mix(in srgb, var(--accent-2) 15%, transparent); color: var(--accent-2); border-color: color-mix(in srgb, var(--accent-2) 35%, transparent); }
+.chip-green { background: rgba(52, 211, 153, 0.14); color: #34d399; border-color: rgba(52, 211, 153, 0.35); }
+/* Badge verre dépoli (sur images) */
+.chip-glass {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
 
 /* ---- Carte média ---- */
 .card {
   position: relative;
-  transition: transform 0.5s var(--ease-out-expo);
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 0.55rem;
+  transition: transform 0.45s var(--ease-out-expo), border-color 0.35s ease, box-shadow 0.35s ease, background-color 0.35s ease;
 }
-.card:hover { transform: translateY(-4px); }
+.card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+  box-shadow: 0 18px 40px -14px var(--glow);
+}
 .card-media {
   position: relative;
   overflow: hidden;
-  border-radius: 10px;
-  background: var(--color-line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface) 60%, #000);
 }
 .card-media img {
   width: 100%; height: 100%;
   object-fit: cover;
-  transition: transform 1s var(--ease-out-expo), filter 0.5s ease;
+  transition: transform 1s var(--ease-out-expo);
 }
 .card:hover .card-media img { transform: scale(1.05); }
 .card-media::after {
   content: '';
   position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.35), transparent 45%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
+  background: linear-gradient(to top, rgba(4, 8, 14, 0.72), rgba(4, 8, 14, 0.15) 45%, transparent 70%);
 }
-.card:hover .card-media::after { opacity: 1; }
+.card-body { padding: 0.9rem 0.7rem 0.6rem; }
 
-/* Révélation d'image simple (hero, service) */
+/* Détails qui balaient au survol (grille projets) */
+.card-reveal {
+  position: absolute;
+  left: 0.9rem; right: 0.9rem; bottom: 0.85rem;
+  transform: translateY(10px);
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.5s var(--ease-out-expo);
+}
+.card:hover .card-reveal { opacity: 1; transform: none; }
+
+/* ---- Verre dépoli (témoignages) ---- */
+.glass {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+}
+
+/* Révélation simple */
 .reveal-img { overflow: hidden; border-radius: 10px; }
 .reveal-img img { transition: transform 1.1s var(--ease-out-expo); }
 .reveal-img:hover img { transform: scale(1.04); }
@@ -156,18 +253,15 @@
 .fade-up.in-view { opacity: 1; transform: none; }
 
 /* ---- Transition de page ---- */
-@keyframes pageIn {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: none; }
-}
-.page-in { animation: pageIn 0.55s var(--ease-out-expo) both; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.page-in { animation: pageIn 0.5s var(--ease-out-expo) both; }
 
-/* ---- Grain léger pour les sections sombres ---- */
+/* ---- Grain (sections sombres) ---- */
 .grain::before {
   content: '';
   position: absolute; inset: 0;
   pointer-events: none;
-  opacity: 0.5;
+  opacity: 0.4;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
 }

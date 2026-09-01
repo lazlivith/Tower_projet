@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Menu, X, ArrowUpRight, ChevronDown, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { services } from '../../data/mockData';
+import type { VitrineTheme } from '../../hooks/useVitrineTheme';
 
 const NAV = [
   { to: '/', label: 'Accueil' },
@@ -12,7 +13,12 @@ const NAV = [
   { to: '/blog', label: 'Blog' },
 ];
 
-export default function Header() {
+interface HeaderProps {
+  theme?: VitrineTheme;
+  onToggleTheme?: () => void;
+}
+
+export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -107,27 +113,44 @@ export default function Header() {
               ))}
             </nav>
 
-            <div className="hidden md:flex items-center gap-3 pl-3">
-              {user ? (
-                <>
-                  <Link to={dashboardLink()} className={`text-[13px] hover:text-[color:var(--color-accent)] ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}>
-                    {user.nom?.split(' ')[0]}
-                  </Link>
-                  <button onClick={() => { logout(); navigate('/'); }} className={`text-[13px] opacity-50 hover:opacity-100 ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}>
-                    Déconnexion
-                  </button>
-                </>
-              ) : (
-                <Link to="/learn/login" className={`btn ${dark ? 'btn-solid' : 'btn-light'} !py-2 !px-5 !text-[12.5px]`}>
-                  Espace apprenant
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
-              )}
-            </div>
+            <div className="flex items-center gap-2 pl-2 sm:gap-3 sm:pl-3">
+              {/* Bascule thème clair / sombre */}
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                className={`grid h-9 w-9 place-items-center rounded-full border text-[15px] transition-colors ${
+                  dark
+                    ? 'border-[color:var(--color-line)] text-[color:var(--color-ink)] hover:border-[color:var(--color-accent)]'
+                    : 'border-white/30 text-white hover:border-white/70'
+                }`}
+              >
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
 
-            <button className={`md:hidden ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`} onClick={() => setOpen((o) => !o)} aria-label="Menu">
-              {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+              <div className="hidden md:flex items-center gap-3">
+                {user ? (
+                  <>
+                    <Link to={dashboardLink()} className={`text-[13px] hover:text-[color:var(--color-accent)] ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}>
+                      {user.nom?.split(' ')[0]}
+                    </Link>
+                    <button onClick={() => { logout(); navigate('/'); }} className={`text-[13px] opacity-50 hover:opacity-100 ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}>
+                      Déconnexion
+                    </button>
+                  </>
+                ) : (
+                  <Link to="/learn/login" className="btn btn-solid !py-2 !px-5 !text-[12.5px]">
+                    Espace apprenant
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </Link>
+                )}
+              </div>
+
+              <button className={`md:hidden ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`} onClick={() => setOpen((o) => !o)} aria-label="Menu">
+                {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
         </div>
       </header>
