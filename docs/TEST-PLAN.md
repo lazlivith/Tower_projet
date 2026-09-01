@@ -14,8 +14,22 @@ cd ../frontend
 npm run dev            # http://localhost:5173
 ```
 
+### Test d'intégration automatisé — Espace admin ⇄ Vitrine
+
+```bash
+cd backend
+npm run test:e2e      # = node scripts/e2e-admin.mjs   (base de DEV + npm run seed requis)
+```
+
+50 vérifications : accès/CRUD MANAGER sur publications, projets, formations,
+instructeurs, classes en ligne, paiements/accès, utilisateurs, devis, uploads
+(Cloudinary ou disque) — et à chaque fois la répercussion sur les endpoints
+publics du site vitrine. Toutes les données créées sont supprimées en fin de run.
+Sortie : `50 réussis · 0 échoués` + code de sortie 0/1.
+
 Optionnel :
 - **Emails réels** : renseigner `SMTP_*` dans `backend/.env` (sinon les mails sont affichés dans la console).
+- **Cloudinary** : `CLOUDINARY_URL` (ou trio `CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET`) dans `backend/.env` — sinon fallback disque local `backend/uploads/`.
 - **Stripe réel** : `STRIPE_SECRET_KEY` (test) + `stripe listen --forward-to localhost:5000/api/payments/webhook` puis coller le `whsec_...` dans `STRIPE_WEBHOOK_SECRET`. Sans Stripe, utiliser le bouton **« Confirmer en mode test »**.
 
 ## Comptes de test (seed)
