@@ -1,14 +1,15 @@
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
-import { Menu, X, ArrowUpRight } from 'lucide-react';
+import { Menu, X, ArrowUpRight, ChevronDown, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { services } from '../../data/mockData';
 
 const NAV = [
-  { to: '/projets', label: 'Projets' },
-  { to: '/services', label: 'Services' },
+  { to: '/', label: 'Accueil' },
+  { to: '/services', label: 'Services', sub: services.map((s) => ({ to: `/services/${s.id}`, label: s.title })) },
+  { to: '/about', label: 'À propos' },
   { to: '/formations', label: 'Formations' },
-  { to: '/blog', label: 'Journal' },
-  { to: '/about', label: 'Studio' },
+  { to: '/blog', label: 'Blog' },
 ];
 
 export default function Header() {
@@ -16,9 +17,10 @@ export default function Header() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const [mobileServices, setMobileServices] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  const overlayHome = pathname === '/'; // header transparent au-dessus du hero
+  const overlayHome = pathname === '/';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -27,7 +29,7 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => { setOpen(false); }, [pathname]);
+  useEffect(() => { setOpen(false); setMobileServices(false); }, [pathname]);
 
   const dashboardLink = () => {
     if (!user) return '/learn/login';
@@ -37,78 +39,93 @@ export default function Header() {
   };
 
   const solid = scrolled || !overlayHome || open;
-  const textDark = solid;
+  const dark = solid;
+  const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
-          solid ? 'bg-[color:var(--color-paper)]/90 backdrop-blur border-b border-[color:var(--color-line)]' : 'bg-transparent'
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+          solid
+            ? 'bg-[color:var(--color-paper)]/85 backdrop-blur-md border-b border-[color:var(--color-line)] shadow-[0_1px_20px_-10px_rgba(0,0,0,0.15)]'
+            : 'bg-transparent'
         }`}
       >
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-12">
-          <div className="flex h-[72px] items-center justify-between">
+          <div className="flex h-[66px] items-center justify-between">
             <Link
               to="/"
-              className={`font-[family-name:var(--font-display)] text-[15px] font-semibold tracking-[0.14em] uppercase ${
-                textDark ? 'text-[color:var(--color-ink)]' : 'text-white'
-              }`}
+              className={`font-[family-name:var(--font-display)] text-[15px] font-semibold tracking-[0.14em] uppercase transition-colors ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}
             >
               Tower&nbsp;Structure
             </Link>
 
             {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-9">
+            <nav className="hidden md:flex items-center gap-1">
               {NAV.map((n) => (
-                <Link
-                  key={n.to}
-                  to={n.to}
-                  className={`text-[13.5px] transition-opacity hover:opacity-60 ${
-                    textDark ? 'text-[color:var(--color-ink)]' : 'text-white'
-                  } ${pathname === n.to ? 'opacity-60' : ''}`}
-                >
-                  {n.label}
-                </Link>
+                <div key={n.to} className="group relative">
+                  <Link
+                    to={n.to}
+                    className={`flex items-center gap-1 px-3.5 py-2 text-[13.5px] transition-colors ${
+                      dark ? 'text-[color:var(--color-ink)]' : 'text-white'
+                    } ${isActive(n.to) ? '' : 'opacity-80 hover:opacity-100'}`}
+                  >
+                    <span className="relative">
+                      {n.label}
+                      <span
+                        className={`absolute -bottom-1 left-0 h-px bg-[color:var(--color-accent)] transition-all duration-300 ${
+                          isActive(n.to) ? 'w-full' : 'w-0 group-hover:w-full'
+                        }`}
+                      />
+                    </span>
+                    {n.sub && <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />}
+                  </Link>
+
+                  {n.sub && (
+                    <div className="invisible absolute left-0 top-full pt-3 opacity-0 translate-y-1 transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0">
+                      <div className="w-[320px] rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] p-2 shadow-[0_30px_60px_-25px_rgba(0,0,0,0.3)]">
+                        {n.sub.map((s) => (
+                          <Link
+                            key={s.to}
+                            to={s.to}
+                            className="group/item flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-[13px] leading-snug text-[color:var(--color-ink-soft)] transition-colors hover:bg-[color:var(--color-paper-2)] hover:text-[color:var(--color-ink)]"
+                          >
+                            {s.label}
+                            <ArrowUpRight className="w-3.5 h-3.5 shrink-0 opacity-0 -translate-x-1 transition-all group-hover/item:opacity-100 group-hover/item:translate-x-0" />
+                          </Link>
+                        ))}
+                        <Link
+                          to="/services"
+                          className="mt-1 flex items-center gap-2 rounded-xl px-4 py-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-accent)] hover:bg-[color:var(--color-accent-soft)]"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Tous les services
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))}
             </nav>
 
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-3 pl-3">
               {user ? (
                 <>
-                  <Link
-                    to={dashboardLink()}
-                    className={`text-[13.5px] hover:opacity-60 ${textDark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}
-                  >
+                  <Link to={dashboardLink()} className={`text-[13px] hover:text-[color:var(--color-accent)] ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}>
                     {user.nom?.split(' ')[0]}
                   </Link>
-                  <button
-                    onClick={() => { logout(); navigate('/'); }}
-                    className={`text-[13.5px] opacity-50 hover:opacity-100 ${textDark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}
-                  >
+                  <button onClick={() => { logout(); navigate('/'); }} className={`text-[13px] opacity-50 hover:opacity-100 ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}>
                     Déconnexion
                   </button>
                 </>
               ) : (
-                <Link
-                  to="/learn/login"
-                  className={`group inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-[13px] font-medium transition-colors ${
-                    textDark
-                      ? 'bg-[color:var(--color-ink)] text-[color:var(--color-paper)] hover:bg-[color:var(--color-accent)]'
-                      : 'bg-white text-[color:var(--color-ink)] hover:bg-white/90'
-                  }`}
-                >
+                <Link to="/learn/login" className={`btn ${dark ? 'btn-solid' : 'btn-light'} !py-2 !px-5 !text-[12.5px]`}>
                   Espace apprenant
-                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
               )}
             </div>
 
-            {/* Mobile toggle */}
-            <button
-              className={`md:hidden ${textDark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}
-              onClick={() => setOpen((o) => !o)}
-              aria-label="Menu"
-            >
+            <button className={`md:hidden ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`} onClick={() => setOpen((o) => !o)} aria-label="Menu">
               {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
@@ -117,27 +134,39 @@ export default function Header() {
 
       {/* Mobile overlay */}
       {open && (
-        <div className="fixed inset-0 z-40 bg-[color:var(--color-paper)] pt-[72px] md:hidden">
-          <nav className="flex flex-col px-6 py-8">
-            {NAV.map((n) => (
-              <Link
-                key={n.to}
-                to={n.to}
-                className="font-[family-name:var(--font-display)] text-3xl py-3 border-b border-[color:var(--color-line)]"
-              >
-                {n.label}
-              </Link>
-            ))}
-            <Link
-              to="/quote"
-              className="font-[family-name:var(--font-display)] text-3xl py-3 border-b border-[color:var(--color-line)]"
-            >
+        <div className="fixed inset-0 z-40 bg-[color:var(--color-paper)] pt-[66px] md:hidden overflow-y-auto">
+          <nav className="flex flex-col px-6 py-6">
+            {NAV.map((n) =>
+              n.sub ? (
+                <div key={n.to} className="border-b border-[color:var(--color-line)]">
+                  <button
+                    onClick={() => setMobileServices((v) => !v)}
+                    className="flex w-full items-center justify-between py-4 font-[family-name:var(--font-display)] text-2xl"
+                  >
+                    {n.label}
+                    <ChevronDown className={`w-5 h-5 transition-transform ${mobileServices ? 'rotate-180' : ''}`} />
+                  </button>
+                  {mobileServices && (
+                    <div className="pb-4 pl-1">
+                      {n.sub.map((s) => (
+                        <Link key={s.to} to={s.to} className="block py-2 text-[15px] text-[color:var(--color-ink-soft)]">{s.label}</Link>
+                      ))}
+                      <Link to="/services" className="block py-2 text-[13px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-accent)]">
+                        Tous les services
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link key={n.to} to={n.to} className="border-b border-[color:var(--color-line)] py-4 font-[family-name:var(--font-display)] text-2xl">
+                  {n.label}
+                </Link>
+              )
+            )}
+            <Link to="/quote" className="border-b border-[color:var(--color-line)] py-4 font-[family-name:var(--font-display)] text-2xl">
               Devis
             </Link>
-            <Link
-              to={user ? dashboardLink() : '/learn/login'}
-              className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-ink)] px-6 py-3.5 text-sm font-medium text-[color:var(--color-paper)]"
-            >
+            <Link to={user ? dashboardLink() : '/learn/login'} className="btn btn-solid mt-7 justify-center">
               {user ? 'Mon espace' : 'Espace apprenant'} <ArrowUpRight className="w-4 h-4" />
             </Link>
           </nav>

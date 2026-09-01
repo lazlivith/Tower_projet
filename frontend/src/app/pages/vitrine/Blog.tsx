@@ -13,7 +13,7 @@ interface Post {
   imageUrl: string | null;
   createdAt: string;
 }
-const PLACEHOLDER = 'https://placehold.co/1200x800/17160f/faf9f6?text=Journal';
+const PLACEHOLDER = 'https://placehold.co/1000x700/16150f/f7f5f0?text=Blog';
 
 export default function Blog() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -32,61 +32,53 @@ export default function Blog() {
 
   return (
     <div>
-      <Helmet><title>Journal — Tower Structure</title></Helmet>
+      <Helmet><title>Blog — Tower Structure</title></Helmet>
 
-      <section className="mx-auto max-w-[1400px] px-5 pt-20 sm:px-8 lg:px-12 lg:pt-28">
+      <section className="mx-auto max-w-[1400px] px-5 pt-16 sm:px-8 lg:px-12 lg:pt-24">
         <p className="eyebrow">Notes de terrain</p>
-        <h1 className="mt-4 max-w-3xl text-4xl leading-[1.05] sm:text-6xl lg:text-[4.5rem]">Journal</h1>
-        <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">
+        <h1 className="mt-4 max-w-3xl text-4xl leading-[1.04] sm:text-6xl lg:text-[4.2rem]">Blog</h1>
+        <p className="mt-5 max-w-xl text-[14.5px] leading-relaxed text-[color:var(--color-ink-soft)]">
           Méthodes, retours de chantier et repères techniques — BIM, Eurocodes, diagnostic.
         </p>
       </section>
 
-      <section className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+      <section className="mx-auto max-w-[1400px] px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
         {loading ? (
-          <p className="py-20 text-center text-[color:var(--color-ink-soft)]">Chargement…</p>
+          <p className="py-16 text-center text-[color:var(--color-ink-soft)]">Chargement…</p>
         ) : posts.length === 0 ? (
-          <p className="py-20 text-center text-[color:var(--color-ink-soft)]">Aucun article publié pour le moment.</p>
+          <p className="py-16 text-center text-[color:var(--color-ink-soft)]">Aucun article publié pour le moment.</p>
         ) : (
           <>
-            {/* Article à la une */}
-            <Link to={`/blog/${lead.id}`} className="fade-up group grid gap-8 md:grid-cols-2 md:items-center">
-              <div className="reveal-img aspect-[4/3] w-full bg-[color:var(--color-line)]">
-                <img
-                  src={toAbsoluteUrl(lead.imageUrl) || PLACEHOLDER}
-                  alt={lead.title}
-                  className="h-full w-full object-cover"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
-                />
+            <Link to={`/blog/${lead.id}`} className="card fade-up grid gap-8 md:grid-cols-2 md:items-center">
+              <div className="card-media aspect-[16/10]">
+                <img src={toAbsoluteUrl(lead.imageUrl) || PLACEHOLDER} alt={lead.title}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }} />
               </div>
               <div>
-                <div className="text-[12px] uppercase tracking-[0.16em] text-[color:var(--color-ink-soft)]">
-                  {lead.category || 'Article'} · {new Date(lead.createdAt).toLocaleDateString('fr-FR')}
+                <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.14em] text-[color:var(--color-ink-soft)]">
+                  <span className="chip">{lead.category || 'Article'}</span>
+                  {new Date(lead.createdAt).toLocaleDateString('fr-FR')}
                 </div>
-                <h2 className="mt-4 text-3xl sm:text-4xl">{lead.title}</h2>
-                <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">{lead.excerpt}</p>
-                <span className="arrow-link mt-6 inline-flex text-[color:var(--color-ink)]">Lire l'article <ArrowUpRight className="w-4 h-4" /></span>
+                <h2 className="mt-4 text-2xl sm:text-3xl">{lead.title}</h2>
+                <p className="mt-3 max-w-lg text-[14.5px] leading-relaxed text-[color:var(--color-ink-soft)]">{lead.excerpt}</p>
+                <span className="arrow-link mt-5 inline-flex text-[color:var(--color-ink)]">Lire l'article <ArrowUpRight className="w-4 h-4" /></span>
               </div>
             </Link>
 
-            {/* Reste */}
             {rest.length > 0 && (
-              <div className="mt-20 grid gap-x-8 gap-y-14 border-t border-[color:var(--color-line)] pt-14 md:grid-cols-3">
+              <div className="mt-16 grid gap-x-6 gap-y-12 border-t border-[color:var(--color-line)] pt-14 sm:grid-cols-2 lg:grid-cols-3">
                 {rest.map((p) => (
-                  <Link key={p.id} to={`/blog/${p.id}`} className="fade-up group block">
-                    <div className="reveal-img aspect-[4/3] w-full bg-[color:var(--color-line)]">
-                      <img
-                        src={toAbsoluteUrl(p.imageUrl) || PLACEHOLDER}
-                        alt={p.title}
-                        className="h-full w-full object-cover"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
-                      />
+                  <Link key={p.id} to={`/blog/${p.id}`} className="card fade-up block">
+                    <div className="card-media aspect-[4/3]">
+                      <img src={toAbsoluteUrl(p.imageUrl) || PLACEHOLDER} alt={p.title}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }} />
                     </div>
-                    <div className="mt-4 text-[11px] uppercase tracking-[0.16em] text-[color:var(--color-ink-soft)]">
-                      {p.category || 'Article'} · {new Date(p.createdAt).toLocaleDateString('fr-FR')}
+                    <div className="mt-3.5 flex items-center gap-2 text-[10.5px] uppercase tracking-[0.14em] text-[color:var(--color-ink-soft)]">
+                      <span className="chip">{p.category || 'Article'}</span>
+                      {new Date(p.createdAt).toLocaleDateString('fr-FR')}
                     </div>
-                    <h3 className="mt-2 text-xl">{p.title}</h3>
-                    <p className="mt-2 line-clamp-2 text-[14px] text-[color:var(--color-ink-soft)]">{p.excerpt}</p>
+                    <h3 className="mt-2 text-[16px] font-medium leading-snug">{p.title}</h3>
+                    <p className="mt-1.5 line-clamp-2 text-[13.5px] text-[color:var(--color-ink-soft)]">{p.excerpt}</p>
                   </Link>
                 ))}
               </div>

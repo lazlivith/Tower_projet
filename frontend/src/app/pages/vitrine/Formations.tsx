@@ -15,7 +15,7 @@ interface Course {
   imageUrl?: string | null;
   priceLabel?: string | null;
 }
-const PLACEHOLDER = 'https://placehold.co/1200x900/17160f/faf9f6?text=Formation';
+const PLACEHOLDER = 'https://placehold.co/900x700/16150f/f7f5f0?text=Formation';
 
 export default function Formations() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -37,45 +37,38 @@ export default function Formations() {
         <meta name="description" content="Formations en ligne certifiantes : BIM, calcul de structure, Eurocodes, conception parasismique." />
       </Helmet>
 
-      <section className="mx-auto max-w-[1400px] px-5 pt-20 sm:px-8 lg:px-12 lg:pt-28">
+      <section className="mx-auto max-w-[1400px] px-5 pt-16 sm:px-8 lg:px-12 lg:pt-24">
         <p className="eyebrow">Académie Tower Structure</p>
-        <h1 className="mt-4 max-w-4xl text-4xl leading-[1.05] sm:text-6xl lg:text-[4.5rem]">
+        <h1 className="mt-4 max-w-4xl text-4xl leading-[1.04] sm:text-6xl lg:text-[4.2rem]">
           Se former à la structure,<br />pour de bon.
         </h1>
-        <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">
-          Parcours en ligne, encadrés par des ingénieurs praticiens. Séquençage progressif,
-          quiz, devoirs, certificat à la clé.
+        <p className="mt-5 max-w-xl text-[14.5px] leading-relaxed text-[color:var(--color-ink-soft)]">
+          Parcours encadrés par des ingénieurs praticiens. Séquençage progressif, quiz, devoirs, certificat.
         </p>
       </section>
 
-      <section className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+      <section className="mx-auto max-w-[1400px] px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
         {loading ? (
-          <p className="py-20 text-center text-[color:var(--color-ink-soft)]">Chargement…</p>
+          <p className="py-16 text-center text-[color:var(--color-ink-soft)]">Chargement…</p>
         ) : courses.length === 0 ? (
-          <p className="py-20 text-center text-[color:var(--color-ink-soft)]">Aucune formation publiée pour le moment.</p>
+          <p className="py-16 text-center text-[color:var(--color-ink-soft)]">Aucune formation publiée pour le moment.</p>
         ) : (
-          <div className="grid gap-x-8 gap-y-16 md:grid-cols-2">
-            {courses.map((c, i) => (
-              <Link to={`/formations/${c.id}`} key={c.id} className={`fade-up group block ${i % 3 === 0 ? 'md:col-span-2 md:grid md:grid-cols-2 md:gap-8 md:items-center' : ''}`}>
-                <div className={`reveal-img w-full bg-[color:var(--color-line)] ${i % 3 === 0 ? 'aspect-[4/3]' : 'aspect-[16/10]'}`}>
-                  <img
-                    src={toAbsoluteUrl(c.imageUrl) || PLACEHOLDER}
-                    alt={c.title}
-                    className="h-full w-full object-cover"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }}
-                  />
+          <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((c) => (
+              <Link to={`/formations/${c.id}`} key={c.id} className="card fade-up block">
+                <div className="card-media aspect-[4/3]">
+                  <img src={toAbsoluteUrl(c.imageUrl) || PLACEHOLDER} alt={c.title}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = PLACEHOLDER; }} />
                 </div>
-                <div className={i % 3 === 0 ? '' : 'mt-5'}>
-                  <div className="text-[12px] uppercase tracking-[0.16em] text-[color:var(--color-ink-soft)]">
+                <div className="mt-4">
+                  <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--color-ink-soft)]">
                     {c.level || 'Tous niveaux'}{c.durationHours ? ` · ${c.durationHours} h` : ''}
                   </div>
-                  <h2 className="mt-3 flex items-center gap-2 text-2xl sm:text-3xl">
-                    {c.title}
-                    <ArrowUpRight className="w-5 h-5 opacity-0 transition-opacity group-hover:opacity-100" />
-                  </h2>
-                  <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">{c.description}</p>
-                  <div className="mt-6 font-[family-name:var(--font-display)] text-lg">
+                  <h2 className="mt-1.5 text-lg font-medium leading-snug sm:text-xl">{c.title}</h2>
+                  <p className="mt-2 line-clamp-2 text-[13.5px] leading-relaxed text-[color:var(--color-ink-soft)]">{c.description}</p>
+                  <div className="mt-3 flex items-center gap-2 text-[13px] font-[family-name:var(--font-display)] text-[color:var(--color-accent)]">
                     {c.priceLabel || `${Number(c.price)?.toLocaleString('fr-FR')} MAD`}
+                    <ArrowUpRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
               </Link>
@@ -84,13 +77,12 @@ export default function Formations() {
         )}
       </section>
 
-      <section className="bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
-        <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 lg:px-12">
-          <h2 className="max-w-2xl text-3xl sm:text-5xl">Former une équipe entière ?</h2>
-          <p className="mt-5 max-w-xl text-[15px] text-white/60">Nous construisons des parcours sur mesure pour les bureaux d'études et entreprises.</p>
-          <Link to="/quote" className="arrow-link mt-8 inline-flex text-[color:var(--color-paper)]">
-            Nous contacter <ArrowUpRight className="w-4 h-4" />
-          </Link>
+      <section className="relative overflow-hidden bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
+        <div className="grain absolute inset-0" />
+        <div className="relative mx-auto max-w-[1400px] px-5 py-20 sm:px-8 lg:px-12">
+          <h2 className="max-w-2xl text-3xl sm:text-5xl">Former une équipe entière&nbsp;?</h2>
+          <p className="mt-4 max-w-xl text-[14.5px] text-white/55">Parcours sur mesure pour les bureaux d'études et entreprises.</p>
+          <Link to="/quote" className="btn btn-light mt-8">Nous contacter <ArrowUpRight className="w-4 h-4" /></Link>
         </div>
       </section>
     </div>

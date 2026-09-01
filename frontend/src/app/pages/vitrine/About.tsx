@@ -78,7 +78,7 @@ export default function About() {
         <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 lg:px-12">
           <h2 className="max-w-2xl text-3xl sm:text-5xl">Travailler avec le studio</h2>
           <div className="mt-8 flex flex-wrap gap-6">
-            <Link to="/quote" className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[13.5px] font-medium text-[color:var(--color-ink)] hover:bg-white/90">
+            <Link to="/quote" className="btn btn-light">
               Demander une étude <ArrowUpRight className="w-4 h-4" />
             </Link>
             <Link to="/formations" className="arrow-link text-[color:var(--color-paper)]">Voir les formations</Link>

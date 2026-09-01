@@ -147,7 +147,7 @@ export default function Quote() {
             <button
               type="submit"
               disabled={loading}
-              className="group inline-flex items-center gap-2 rounded-full bg-[color:var(--color-ink)] px-8 py-4 text-[13.5px] font-medium text-[color:var(--color-paper)] transition-colors hover:bg-[color:var(--color-accent)] disabled:opacity-60"
+              className="btn btn-solid disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />}
               {loading ? 'Envoi…' : 'Envoyer la demande'}

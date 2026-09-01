@@ -78,7 +78,7 @@ export default function FormationDetail() {
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[color:var(--color-ink-soft)]">{course.description}</p>
 
         <div className="mt-10 flex flex-wrap items-center gap-4">
-          <button onClick={enroll} className="group inline-flex items-center gap-2 rounded-full bg-[color:var(--color-ink)] px-7 py-3.5 text-[13.5px] font-medium text-[color:var(--color-paper)] transition-colors hover:bg-[color:var(--color-accent)]">
+          <button onClick={enroll} className="btn btn-solid">
             S'inscrire à cette session
             <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </button>
@@ -168,7 +168,7 @@ export default function FormationDetail() {
       <section className="bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
         <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 lg:px-12">
           <h2 className="max-w-2xl text-2xl sm:text-4xl">Prêt à monter en compétences&nbsp;?</h2>
-          <button onClick={enroll} className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[13.5px] font-medium text-[color:var(--color-ink)] hover:bg-white/90">
+          <button onClick={enroll} className="btn btn-light mt-8">
             S'inscrire <ArrowUpRight className="w-4 h-4" />
           </button>
         </div>
