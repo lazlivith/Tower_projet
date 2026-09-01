@@ -104,7 +104,7 @@ Légende accès : 🌐 public · 🔒 authentifié · 🎓 STUDENT · 👨‍�
 | `/api/notifications` | `GET /`, `PATCH /mark-all-read`, `PATCH /:id/read` | 🔒 |
 | `/api/messages` | `GET /`, `POST /send`, `PATCH /:messageId/read` | 🔒 |
 | `/api/stats` | `GET /admin` · `/instructor` · `/student` | 🛠️ · 👨‍🏫 · 🎓 |
-| `/api/upload` | `POST /image` (🔒) · `POST /document`, `POST /video` (👨‍🏫/🛠️) — Cloudinary si configuré, sinon disque local | 🔒 |
+| `/api/upload` | `POST /image` (🔒) · `POST /document`, `POST /video` (👨‍🏫/🛠️) — champ `scope` (blog·projects·services·courses·certificates·invoices·avatars·misc) → dossier dédié ; Cloudinary si configuré, sinon disque local | 🔒 |
 | `/api/health`, `/api/health/deep` | diagnostic | 🌐 |
 
 ## Reste à faire (documentation)

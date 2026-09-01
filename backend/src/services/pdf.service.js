@@ -5,11 +5,12 @@ import { storeFile } from './storage.service.js';
  * Sauvegarde le buffer PDF (Cloudinary si configuré, sinon disque) et retourne
  * l'URL publique exploitable telle quelle.
  */
-const savePdf = async (pdfBytes, prefix) => {
+const savePdf = async (pdfBytes, prefix, scope = 'invoices') => {
   const asset = await storeFile({
     buffer: Buffer.from(pdfBytes),
     originalname: `${prefix}.pdf`,
     kind: 'pdf',
+    scope,
   });
   return asset.url;
 };
@@ -36,7 +37,7 @@ export const generateInvoicePDF = async (paymentData, studentInfo, courseInfo) =
     page.drawText('Merci pour votre confiance - TowerStructure', { x: 50, y: 50, size: 10, font: timesRomanFont, color: rgb(0.5, 0.5, 0.5) });
 
     const pdfBytes = await pdfDoc.save();
-    return await savePdf(pdfBytes, 'facture');
+    return await savePdf(pdfBytes, 'facture', 'invoices');
   } catch (error) {
     console.error("Erreur génération facture:", error);
     throw error;
@@ -79,7 +80,7 @@ export const generateCertificatePDF = async (studentInfo, courseInfo, score, hou
     center('Tower Structure — E-Learning', 70, 11, helveticaFont, rgb(0.5, 0.5, 0.5));
 
     const pdfBytes = await pdfDoc.save();
-    return await savePdf(pdfBytes, 'certificat');
+    return await savePdf(pdfBytes, 'certificat', 'certificates');
   } catch (error) {
     console.error("Erreur génération certificat:", error);
     throw error;

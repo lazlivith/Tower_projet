@@ -2,6 +2,17 @@ import api, { toAbsoluteUrl } from './api';
 
 export type UploadKind = 'image' | 'document' | 'video';
 
+/** Domaine de rangement côté serveur (dossier Cloudinary / disque). */
+export type UploadScope =
+  | 'blog'
+  | 'projects'
+  | 'services'
+  | 'courses'
+  | 'certificates'
+  | 'invoices'
+  | 'avatars'
+  | 'misc';
+
 export interface UploadedAsset {
   /** URL absolue exploitable telle quelle (Cloudinary en prod, /uploads/… en dev). */
   url: string;
@@ -14,12 +25,18 @@ export interface UploadedAsset {
 
 /**
  * Téléverse un fichier via l'API (`POST /api/upload/{kind}`).
+ * `scope` détermine le dossier de rangement serveur (blog, projects, courses…).
  * Le back-end route vers Cloudinary si configuré, sinon vers le disque local.
  * La `url` renvoyée est toujours absolue (passée par `toAbsoluteUrl`).
  */
-export async function uploadFile(file: File, kind: UploadKind = 'image'): Promise<UploadedAsset> {
+export async function uploadFile(
+  file: File,
+  kind: UploadKind = 'image',
+  scope?: UploadScope
+): Promise<UploadedAsset> {
   const fd = new FormData();
   fd.append('file', file);
+  if (scope) fd.append('scope', scope);
   const res = await api.post(`/upload/${kind}`, fd, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });

@@ -6,25 +6,57 @@ import { cloudinary, isCloudinaryConfigured, CLOUDINARY_BASE_FOLDER } from '../c
 /**
  * Service de stockage unifié.
  *
- * En production : Cloudinary (images / vidéos / PDF & documents « raw »).
- * En dev sans clés Cloudinary : disque local `uploads/…` servi par express.static.
+ * En production : Cloudinary. En dev sans clés : disque local `uploads/…`.
  *
- * Toutes les fonctions renvoient une forme homogène :
- *   { url, publicId, provider, resourceType, bytes, format }
- * `url` est TOUJOURS exploitable tel quel par le front (absolue pour Cloudinary,
- * relative « /uploads/… » pour le disque — `toAbsoluteUrl` côté front la complète).
+ * Arborescence — un espace par domaine fonctionnel :
+ *
+ *   <BASE>/blog                     images d'articles
+ *   <BASE>/projects                 visuels de projets / réalisations
+ *   <BASE>/services                 visuels de services
+ *   <BASE>/courses/covers           couvertures de formations
+ *   <BASE>/courses/videos           vidéos de cours (téléversées par les formateurs)
+ *   <BASE>/courses/documents        supports PDF de cours
+ *   <BASE>/certificates             certificats PDF générés
+ *   <BASE>/invoices                 factures PDF générées
+ *   <BASE>/avatars                  photos de profil
+ *   <BASE>/misc/<type>              non catégorisé
+ *
+ * (<BASE> = CLOUDINARY_FOLDER, ex. "TowerCore")
+ *
+ * Retour homogène : { url, publicId, provider, resourceType, bytes, format, folder }
  */
 
-const KIND_MAP = {
-  image: { folder: 'images', resourceType: 'image' },
-  video: { folder: 'videos', resourceType: 'video' },
-  document: { folder: 'documents', resourceType: 'raw' },
-  pdf: { folder: 'pdfs', resourceType: 'raw' },
+const RESOURCE_BY_KIND = { image: 'image', video: 'video', document: 'raw', pdf: 'raw' };
+
+// Domaines autorisés. `byKind` = range en sous-dossiers selon le type de média.
+const SCOPES = {
+  blog: { byKind: false },
+  projects: { byKind: false },
+  services: { byKind: false },
+  courses: { byKind: true },
+  certificates: { byKind: false },
+  invoices: { byKind: false },
+  avatars: { byKind: false },
+  misc: { byKind: true },
 };
+
+/** Liste blanche exposée au contrôleur d'upload. */
+export const UPLOAD_SCOPES = Object.keys(SCOPES);
+
+const COURSE_SUB = { image: 'covers', video: 'videos', document: 'documents', pdf: 'documents' };
+const MISC_SUB = { image: 'images', video: 'videos', document: 'documents', pdf: 'pdf' };
+
+/** Construit le chemin de dossier relatif (sans <BASE>) pour un scope + type. */
+export function resolveFolder(scope = 'misc', kind = 'image') {
+  const s = SCOPES[scope] ? scope : 'misc';
+  if (s === 'courses') return `courses/${COURSE_SUB[kind] || 'files'}`;
+  if (s === 'misc') return `misc/${MISC_SUB[kind] || 'files'}`;
+  return s;
+}
 
 const ensureDir = (dir) => { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); };
 
-/** Upload d'un buffer Cloudinary via stream (pas de fichier temporaire). */
+/** Upload d'un buffer vers Cloudinary via stream (pas de fichier temporaire). */
 const cloudinaryUpload = (buffer, { folder, resourceType, publicId }) =>
   new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -43,13 +75,15 @@ const cloudinaryUpload = (buffer, { folder, resourceType, publicId }) =>
 /**
  * Enregistre un fichier.
  * @param {object} p
- * @param {Buffer} p.buffer        contenu du fichier
- * @param {string} p.originalname  nom d'origine (pour l'extension)
+ * @param {Buffer} p.buffer                       contenu du fichier
+ * @param {string} [p.originalname]               nom d'origine (pour l'extension)
  * @param {'image'|'video'|'document'|'pdf'} [p.kind='image']
- * @param {string} [p.publicId]    identifiant Cloudinary souhaité (optionnel)
+ * @param {keyof typeof SCOPES} [p.scope='misc']  domaine fonctionnel (dossier)
+ * @param {string} [p.publicId]                   identifiant Cloudinary souhaité
  */
-export const storeFile = async ({ buffer, originalname = '', kind = 'image', publicId }) => {
-  const { folder, resourceType } = KIND_MAP[kind] || KIND_MAP.image;
+export const storeFile = async ({ buffer, originalname = '', kind = 'image', scope = 'misc', publicId }) => {
+  const resourceType = RESOURCE_BY_KIND[kind] || 'image';
+  const folder = resolveFolder(scope, kind);
   const ext = (path.extname(originalname) || '').toLowerCase();
 
   if (isCloudinaryConfigured) {
@@ -61,10 +95,11 @@ export const storeFile = async ({ buffer, originalname = '', kind = 'image', pub
       resourceType: result.resource_type,
       bytes: result.bytes,
       format: result.format || ext.replace('.', '') || null,
+      folder: `${CLOUDINARY_BASE_FOLDER}/${folder}`,
     };
   }
 
-  // --- Fallback disque local ---
+  // --- Fallback disque local (même arborescence) ---
   const dir = path.resolve('uploads', folder);
   ensureDir(dir);
   const filename = `${uuidv4()}${ext}`;
@@ -76,6 +111,7 @@ export const storeFile = async ({ buffer, originalname = '', kind = 'image', pub
     resourceType,
     bytes: buffer.length,
     format: ext.replace('.', '') || null,
+    folder: `uploads/${folder}`,
   };
 };
 
@@ -98,7 +134,7 @@ export const deleteFile = async ({ publicId, url, resourceType = 'image' }) => {
 
     let id = publicId;
     if (!id && url) {
-      // Extrait le public_id d'une URL Cloudinary : …/upload/v123/<public_id>.<ext>
+      // Extrait le public_id d'une URL Cloudinary : …/upload/v123/<dossiers/public_id>.<ext>
       const m = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-z0-9]+)?$/i);
       id = m ? m[1] : null;
     }

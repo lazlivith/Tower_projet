@@ -77,7 +77,7 @@ export default function ProjectsManager() {
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
-      const { url } = await uploadFile(file, 'image');
+      const { url } = await uploadFile(file, 'image', 'projects');
       if (url) setForm((f) => ({ ...f, imageUrl: url }));
     } catch {
       flash('err', "Échec de l'upload de l'image.");

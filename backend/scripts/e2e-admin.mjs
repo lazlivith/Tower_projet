@@ -401,22 +401,30 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     created.quoteId = null;
   });
 
-  // ---- 10. Upload de médias (Cloudinary / disque) ----
-  sec('Upload de médias');
-  await check('POST /api/upload/image (admin) → 201 + url', async () => {
-    const r = await auth(adminTok)(api().post('/api/upload/image')).attach('file', PNG_1PX, 'e2e.png');
-    eq(r.status, 201, 'HTTP');
+  // ---- 10. Upload de médias — rangement par domaine (Cloudinary / disque) ----
+  sec('Upload de médias — espaces de stockage par domaine');
+  const uploadImg = async (scope, folderContains) => {
+    const r = await auth(adminTok)(api().post('/api/upload/image')).field('scope', scope).attach('file', PNG_1PX, 'e2e.png');
+    eq(r.status, 201, `HTTP (${scope})`);
     assert(typeof r.body.url === 'string' && r.body.url.length > 0, 'url manquante');
+    eq(r.body.scope, scope, 'scope renvoyé');
+    assert((r.body.folder || '').includes(folderContains), `dossier attendu ~ "${folderContains}", reçu "${r.body.folder}"`);
+    assert((r.body.publicId || '').includes(folderContains.split('/')[0]), `publicId hors du dossier ${folderContains}`);
     if (r.body.publicId) created.uploads.push({ publicId: r.body.publicId, url: r.body.url, resourceType: r.body.resourceType || 'image' });
-    if (r.body.provider === 'local') {
-      const g = await api().get(r.body.url);
-      eq(g.status, 200, 'service statique du fichier local');
-    }
+    if (r.body.provider === 'local') eq((await api().get(r.body.url)).status, 200, 'service statique local');
+  };
+  await check('image scope=blog       → dossier .../blog', () => uploadImg('blog', 'blog'));
+  await check('image scope=projects   → dossier .../projects', () => uploadImg('projects', 'projects'));
+  await check('image scope=courses    → dossier .../courses/covers', () => uploadImg('courses', 'courses/covers'));
+  await check('scope invalide → 400', async () => {
+    const r = await auth(adminTok)(api().post('/api/upload/image')).field('scope', 'n_importe_quoi').attach('file', PNG_1PX, 'e2e.png');
+    eq(r.status, 400, 'HTTP');
   });
-  await check('POST /api/upload/document (PDF) accessible à l’admin → 201', async () => {
+  await check('POST /api/upload/document (PDF) → dossier courses/documents', async () => {
     const pdf = Buffer.from('%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF');
-    const r = await auth(adminTok)(api().post('/api/upload/document')).attach('file', pdf, 'e2e.pdf');
+    const r = await auth(adminTok)(api().post('/api/upload/document')).field('scope', 'courses').attach('file', pdf, 'e2e.pdf');
     eq(r.status, 201, 'HTTP');
+    assert((r.body.folder || '').includes('courses/documents'), `dossier reçu "${r.body.folder}"`);
     if (r.body.publicId) created.uploads.push({ publicId: r.body.publicId, url: r.body.url, resourceType: r.body.resourceType || 'raw' });
   });
   await check('POST /api/upload/video refusé à l’élève → 403', async () => {

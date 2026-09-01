@@ -84,7 +84,7 @@ export default function CoursesManager() {
   const upload = async (file: File, apply: (url: string) => void) => {
     setUploading(true);
     try {
-      const { url } = await uploadFile(file, 'image');
+      const { url } = await uploadFile(file, 'image', 'courses');
       if (url) apply(url);
     } catch {
       flash('err', "Échec de l'upload de l'image.");
