@@ -5,11 +5,12 @@ import api from '../../services/api';
 interface QuizQuestion {
   index: number;
   question: string;
-  options: Record<'A' | 'B' | 'C' | 'D', string>;
+  options: Record<string, string>;
 }
 interface QuizData {
   id: string;
   title: string;
+  description?: string | null;
   passScore: number;
   questions: QuizQuestion[];
 }
@@ -22,29 +23,42 @@ interface QuizResult {
 }
 
 /**
- * Quiz interactif d'un chapitre : charge le quiz de la leçon, collecte les réponses,
- * soumet à `/lessons/quiz/:id/submit`. Si réussi, le chapitre est marqué achevé côté serveur.
+ * Quiz interactif — pris en charge :
+ *  - quiz d'un chapitre  : passer `lessonId`  → GET /lessons/:id/quiz
+ *  - quiz assigné (autonome) : passer `quizId` → GET /student/quizzes/:id
+ * La soumission se fait toujours sur POST /lessons/quiz/:id/submit.
  */
-export default function QuizRunner({ lessonId, onPassed }: { lessonId: string; onPassed?: () => void }) {
+export default function QuizRunner({
+  lessonId,
+  quizId,
+  onPassed,
+  onDone,
+}: {
+  lessonId?: string;
+  quizId?: string;
+  onPassed?: () => void;
+  onDone?: (r: QuizResult) => void;
+}) {
   const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [answers, setAnswers] = useState<Record<number, 'A' | 'B' | 'C' | 'D'>>({});
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let alive = true;
-    api.get(`/lessons/${lessonId}/quiz`)
+    const url = quizId ? `/student/quizzes/${quizId}` : `/lessons/${lessonId}/quiz`;
+    api.get(url)
       .then((res) => { if (alive) setQuiz(res.data); })
-      .catch(() => { if (alive) setError("Impossible de charger le quiz."); })
+      .catch((e) => { if (alive) setError(e?.response?.data?.message || 'Impossible de charger le quiz.'); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [lessonId]);
+  }, [lessonId, quizId]);
 
   if (loading) return <div className="py-4 text-sm text-gray-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Chargement du quiz…</div>;
   if (error) return <p className="py-2 text-sm text-red-600">{error}</p>;
-  if (!quiz) return null;
+  if (!quiz) return <p className="py-2 text-sm text-gray-500">Aucun quiz.</p>;
 
   const allAnswered = quiz.questions.every((q) => answers[q.index]);
 
@@ -54,9 +68,10 @@ export default function QuizRunner({ lessonId, onPassed }: { lessonId: string; o
     try {
       const res = await api.post(`/lessons/quiz/${quiz.id}/submit`, { answers });
       setResult(res.data);
+      onDone?.(res.data);
       if (res.data.passed) onPassed?.();
     } catch (err: any) {
-      setError(err.response?.data?.message || "Erreur lors de la soumission.");
+      setError(err.response?.data?.message || 'Erreur lors de la soumission.');
     } finally {
       setSubmitting(false);
     }
@@ -67,8 +82,11 @@ export default function QuizRunner({ lessonId, onPassed }: { lessonId: string; o
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h4 className="font-bold text-gray-800">{quiz.title}</h4>
-        <span className="text-xs text-gray-500">Seuil de réussite : {quiz.passScore}%</span>
+        <div>
+          <h4 className="font-bold text-gray-800">{quiz.title}</h4>
+          {quiz.description && <p className="text-xs text-gray-500">{quiz.description}</p>}
+        </div>
+        <span className="text-xs text-gray-500">Seuil : {quiz.passScore}%</span>
       </div>
 
       {result ? (
@@ -92,30 +110,33 @@ export default function QuizRunner({ lessonId, onPassed }: { lessonId: string; o
       ) : (
         <>
           <ol className="space-y-5">
-            {quiz.questions.map((q) => (
-              <li key={q.index}>
-                <p className="mb-2 font-medium text-gray-800">{q.index + 1}. {q.question}</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {(['A', 'B', 'C', 'D'] as const).map((letter) => (
-                    <label
-                      key={letter}
-                      className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                        answers[q.index] === letter ? 'border-[#FFC107] bg-amber-50' : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name={`q-${q.index}`}
-                        className="accent-[#FFB300]"
-                        checked={answers[q.index] === letter}
-                        onChange={() => setAnswers((a) => ({ ...a, [q.index]: letter }))}
-                      />
-                      <span className="font-semibold text-gray-500">{letter}.</span> {q.options[letter]}
-                    </label>
-                  ))}
-                </div>
-              </li>
-            ))}
+            {quiz.questions.map((q) => {
+              const letters = Object.keys(q.options);
+              return (
+                <li key={q.index}>
+                  <p className="mb-2 font-medium text-gray-800">{q.index + 1}. {q.question}</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {letters.map((letter) => (
+                      <label
+                        key={letter}
+                        className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                          answers[q.index] === letter ? 'border-[#FFC107] bg-amber-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`q-${q.index}`}
+                          className="accent-[#FFB300]"
+                          checked={answers[q.index] === letter}
+                          onChange={() => setAnswers((a) => ({ ...a, [q.index]: letter }))}
+                        />
+                        <span className="font-semibold text-gray-500">{letter}.</span> {q.options[letter]}
+                      </label>
+                    ))}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
 
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}

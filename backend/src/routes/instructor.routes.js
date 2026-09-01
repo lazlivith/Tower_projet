@@ -5,7 +5,9 @@ import {
   getInstructorOverview, listCourseLessons, updateLesson, deleteLesson, reorderLessons,
   listMySessions, updateSession, deleteSession,
 } from '../controllers/instructor.controller.js';
-import { uploadQuiz, listClassroomQuizzes, deleteQuiz } from '../controllers/quiz.controller.js';
+import {
+  uploadQuiz, createQuiz, listClassroomQuizzes, getQuizResults, deleteQuiz, downloadQuizTemplate,
+} from '../controllers/quiz.controller.js';
 import { requireAuth, checkGlobalActivation } from '../middlewares/auth.middleware.js';
 import { restrictToRole } from '../middlewares/role.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
@@ -39,9 +41,12 @@ router.post('/courses/:courseId/sessions', createLiveSession);
 router.patch('/sessions/:sessionId', updateSession);
 router.delete('/sessions/:sessionId', deleteSession);
 
-// ─── Quiz (import Excel) ─────────────────────────────────────────
-router.post('/quizzes/upload', uploadSpreadsheet, uploadQuiz);
+// ─── Quiz : classe entière OU élève précis ──────────────────────
+router.get('/quizzes/template.xlsx', downloadQuizTemplate);
+router.post('/quizzes/upload', uploadSpreadsheet, uploadQuiz);          // fichier (.xlsx/.csv)
+router.post('/classrooms/:classroomId/quizzes', createQuiz);            // depuis le QuizBuilder (JSON)
 router.get('/classrooms/:classroomId/quizzes', listClassroomQuizzes);
+router.get('/quizzes/:id/results', getQuizResults);
 router.delete('/quizzes/:id', deleteQuiz);
 
 export default router;

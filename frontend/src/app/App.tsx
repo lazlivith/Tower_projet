@@ -39,6 +39,7 @@ import StudentDashboard from './pages/student/StudentDashboard';
 import CourseDetail from './pages/student/CourseDetail';
 import StudentCalendar from './pages/student/StudentCalendar';
 import StudentClassBoard from './pages/student/StudentClassBoard';
+import StudentQuizzes from './pages/student/StudentQuizzes';
 import StudentCertificates from './pages/student/StudentCertificates';
 import StudentNotifications from './pages/student/StudentNotifications';
 
@@ -191,6 +192,16 @@ export default function App() {
               <ProtectedRoute requiredRole="STUDENT" requireAccess>
                 <DashboardLayout>
                   <StudentClassBoard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/learn/student/quizzes"
+            element={
+              <ProtectedRoute requiredRole="STUDENT" requireAccess>
+                <DashboardLayout>
+                  <StudentQuizzes />
                 </DashboardLayout>
               </ProtectedRoute>
             }

@@ -550,6 +550,84 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     eq((await I().del(`/api/classrooms/${teachClassId}/messages/${msgId}`)).status, 200, 'HTTP prof del 2');
   });
 
+  // ---- 12. Quiz : classe entière OU élève précis ----
+  sec('Quiz — classe entière & élève ciblé');
+  let classQuizId, personalQuizId;
+  await check('GET /instructor/quizzes/template.xlsx → 200 (xlsx)', async () => {
+    const r = await I().get('/api/instructor/quizzes/template.xlsx');
+    eq(r.status, 200, 'HTTP');
+    assert((r.headers['content-type'] || '').includes('spreadsheetml'), 'content-type');
+  });
+  await check('POST /instructor/classrooms/:id/quizzes (composeur, toute la classe) → 201', async () => {
+    const r = await I().post(`/api/instructor/classrooms/${teachClassId}/quizzes`, {
+      title: 'E2E — Quiz classe', passScore: 50,
+      questions: [
+        { question: '2+2 ?', options: { A: '3', B: '4', C: '5' }, correctAnswer: 'B' },
+        { question: 'Capitale du Maroc ?', options: { A: 'Rabat', B: 'Fès' }, correctAnswer: 'A' },
+      ],
+    });
+    eq(r.status, 201, 'HTTP');
+    classQuizId = r.body.quiz?.id;
+    assert(classQuizId, 'id quiz');
+  });
+  await check("L'élève voit le quiz et le passe (soumission)", async () => {
+    const list = await auth(eleveTok)(api().get('/api/student/quizzes'));
+    eq(list.status, 200, 'HTTP list');
+    assert(list.body.some((q) => q.id === classQuizId), 'quiz absent de la liste élève');
+    const one = await auth(eleveTok)(api().get(`/api/student/quizzes/${classQuizId}`));
+    eq(one.status, 200, 'HTTP get');
+    assert(one.body.questions?.[0]?.correctAnswer === undefined, 'les réponses ne doivent pas être exposées');
+    const sub = await auth(eleveTok)(api().post(`/api/lessons/quiz/${classQuizId}/submit`)).send({ answers: { 0: 'B', 1: 'A' } });
+    eq(sub.status, 200, 'HTTP submit');
+    eq(sub.body.score, 100, 'score');
+    eq(sub.body.passed, true, 'réussi');
+  });
+  await check('GET /instructor/quizzes/:id/results → cohorte + tentative comptée', async () => {
+    const r = await I().get(`/api/instructor/quizzes/${classQuizId}/results`);
+    eq(r.status, 200, 'HTTP');
+    assert(r.body.summary.started >= 1, 'aucune tentative comptée');
+    assert(r.body.rows.some((x) => x.studentId === (created.__eleveId ||= '') || x.status === 'PASSED'), 'ligne PASSED absente');
+  });
+  await check('POST quiz assigné à un élève précis → 201, assignedTo renseigné', async () => {
+    const eleve = await prisma.user.findUnique({ where: { email: 'eleve@tower.ma' } });
+    const r = await I().post(`/api/instructor/classrooms/${teachClassId}/quizzes`, {
+      title: 'E2E — Quiz perso', assignedToId: eleve.id,
+      questions: [{ question: 'x ?', options: { A: '1', B: '2' }, correctAnswer: 'A' }],
+    });
+    eq(r.status, 201, 'HTTP');
+    personalQuizId = r.body.quiz?.id;
+    eq(r.body.quiz?.assignedToId, eleve.id, 'assignedToId');
+  });
+  await check('Quiz assigné à un élève absent de la classe → 400', async () => {
+    const r = await I().post(`/api/instructor/classrooms/${teachClassId}/quizzes`, {
+      title: 'E2E — mauvais destinataire', assignedToId: profId,
+      questions: [{ question: 'x ?', options: { A: '1', B: '2' }, correctAnswer: 'A' }],
+    });
+    eq(r.status, 400, 'HTTP');
+  });
+  await check('POST /instructor/quizzes/upload (fichier xlsx généré) → 201', async () => {
+    const XLSX = await import('xlsx');
+    const aoa = [
+      ['Question', 'OptionA', 'OptionB', 'OptionC', 'CorrectAnswer'],
+      ['Norme béton armé ?', 'EC2', 'EC3', 'EC8', 'A'],
+      ['Acier : module d’Young ?', '210 GPa', '21 GPa', '70 GPa', 'A'],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Quiz');
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const r = await auth(profTok)(api().post('/api/instructor/quizzes/upload'))
+      .field('classroomId', teachClassId)
+      .field('title', 'E2E — Quiz importé')
+      .attach('file', buf, 'quiz.xlsx');
+    eq(r.status, 201, 'HTTP');
+    assert(r.body.quiz?.id, 'id quiz');
+    await I().del(`/api/instructor/quizzes/${r.body.quiz.id}`);
+  });
+  await check('Nettoyage quiz', async () => {
+    for (const id of [classQuizId, personalQuizId]) if (id) await I().del(`/api/instructor/quizzes/${id}`);
+  });
+
   // ─────────────────────────── cleanup ───────────────────────────
   sec('Nettoyage');
   try {
