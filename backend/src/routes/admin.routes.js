@@ -1,11 +1,26 @@
 import express from 'express';
 import { getUsers, toggleUserStatus, toggleEnrollmentStatus, enrollStudentInClass, validateCertificate, onboardInstructor, assignInstructorToCourse, getPendingEnrollments, validateEnrollmentAccess } from '../controllers/admin.controller.js';
 import { createCourse, updateCourse } from '../controllers/admin.cms.controller.js';
+import {
+  getOverview,
+  getCourses as getAcademyCourses,
+  getCourseContent,
+  getInstructors,
+  createInstructor,
+  createClassroom,
+  updateClassroom,
+  deleteClassroom,
+} from '../controllers/admin.academy.controller.js';
 import { requireAuth, checkGlobalActivation } from '../middlewares/auth.middleware.js';
 import { restrictToRole } from '../middlewares/role.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import { updateCourseSchema, createCourseSchema } from '../validators/course.validator.js';
 import { onboardInstructorSchema } from '../validators/instructor.validator.js';
+import {
+  createInstructorSchema,
+  createClassroomSchema,
+  updateClassroomSchema,
+} from '../validators/academy.validator.js';
 
 const router = express.Router();
 
@@ -59,6 +74,24 @@ router.get('/enrollments/pending', getPendingEnrollments);
 
 // Valider manuellement l'accès d'un étudiant (paiement simulé)
 router.patch('/enrollments/:enrollmentId/validate-access', validateEnrollmentAccess);
+
+// ──── ACADÉMIE & SUIVI GLOBAL ───────────────────────────────────────
+
+// Suivi global de la plateforme (compteurs, entonnoir, activité récente)
+router.get('/overview', getOverview);
+
+// Formations back-office : liste (classes + instructeurs + contenu) et détail
+router.get('/academy/courses', getAcademyCourses);
+router.get('/academy/courses/:courseId/content', getCourseContent);
+
+// Instructeurs : liste + création simple (assignation optionnelle)
+router.get('/instructors', getInstructors);
+router.post('/instructors', validate({ body: createInstructorSchema }), createInstructor);
+
+// Classes en ligne (une formation = plusieurs classes, un formateur par classe)
+router.post('/classrooms', validate({ body: createClassroomSchema }), createClassroom);
+router.patch('/classrooms/:classroomId', validate({ body: updateClassroomSchema }), updateClassroom);
+router.delete('/classrooms/:classroomId', deleteClassroom);
 
 export default router;
 
