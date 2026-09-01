@@ -128,6 +128,19 @@ export const joinLiveSession = async (req, res) => {
       }
     }
 
+    // Réunion externe (Teams / Zoom / Meet) : on renvoie le lien tel quel.
+    if (session.meetingUrl) {
+      return res.status(200).json({
+        sessionId: session.id,
+        title: session.title,
+        scheduledAt: session.scheduledAt,
+        moderator: isModerator,
+        external: true,
+        provider: session.provider || 'other',
+        url: session.meetingUrl,
+      });
+    }
+
     const me = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, nom: true, email: true } });
     // Le nom de salle est le dernier segment de l'URL stockée
     const room = session.jitsiUrl.split('/').pop();
@@ -138,6 +151,8 @@ export const joinLiveSession = async (req, res) => {
       title: session.title,
       scheduledAt: session.scheduledAt,
       moderator: isModerator,
+      external: false,
+      provider: 'jitsi',
       ...join,
     });
   } catch (error) {

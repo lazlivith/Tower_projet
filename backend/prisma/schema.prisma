@@ -91,6 +91,7 @@ model User {
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   quizAttempts        QuizAttempt[]
+  classMessages       ClassMessage[]       @relation("AuthoredClassMessages")
 
   @@map("users")
 }
@@ -149,10 +150,11 @@ model Classroom {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp
 
   // Relations
-  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  instructor  User?        @relation("InstructorClasses", fields: [instructorId], references: [id], onDelete: SetNull)
+  course      Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor  User?          @relation("InstructorClasses", fields: [instructorId], references: [id], onDelete: SetNull)
   enrollments Enrollment[]
   quizzes     Quiz[]
+  messages    ClassMessage[]
 
   @@map("classrooms")
 }
@@ -216,7 +218,11 @@ model LiveSession {
   courseId     String   @map("course_id") @db.Uuid
   instructorId String   @map("instructor_id") @db.Uuid
   title        String   @db.VarChar(255)
+  description  String?  @db.Text
   jitsiUrl     String   @map("jitsi_url") @db.VarChar(255)
+  // Lien de réunion externe collé par l'instructeur (Teams / Zoom / Google Meet). Prioritaire sur jitsiUrl.
+  meetingUrl   String?  @map("meeting_url") @db.VarChar(500)
+  provider     String?  @default("jitsi") @db.VarChar(20) // jitsi | teams | zoom | meet | other
   scheduledAt  DateTime @map("scheduled_at") @db.Timestamp
   duration     Int?     @default(120)
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp
@@ -224,6 +230,22 @@ model LiveSession {
   // Relations
   course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   instructor User   @relation("InstructorSessions", fields: [instructorId], references: [id], onDelete: Cascade)
+}
+
+/// Mur d'échange d'une classe : messages diffusés par l'instructeur et réponses des élèves.
+model ClassMessage {
+  id          String   @id @default(uuid()) @db.Uuid
+  classroomId String   @map("classroom_id") @db.Uuid
+  authorId    String   @map("author_id") @db.Uuid
+  body        String   @db.Text
+  pinned      Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  author    User      @relation("AuthoredClassMessages", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([classroomId, createdAt])
+  @@map("class_messages")
 }
 
 // ---- NOUVEAUX MODÈLES (DASHBOARDS) ----
