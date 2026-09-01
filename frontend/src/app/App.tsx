@@ -56,6 +56,7 @@ import InstructorQuizzes from './pages/instructor/InstructorQuizzes';
 // Admin Pages
 import AdminLayout from './components/admin/AdminLayout';
 import AdminOverview from './pages/admin/AdminOverview';
+import AdminDocuments from './pages/admin/AdminDocuments';
 import CoursesManager from './pages/admin/CoursesManager';
 import InstructorsManager from './pages/admin/InstructorsManager';
 import AcademyManager from './pages/admin/AcademyManager';
@@ -251,6 +252,7 @@ export default function App() {
             ['/learn/admin/academy', <AcademyManager />],
             ['/learn/admin/users', <UsersManager />],
             ['/learn/admin/payments', <PaymentsManager />],
+            ['/learn/admin/documents', <AdminDocuments />],
             ['/learn/admin/publications', <PublicationsManager />],
             ['/learn/admin/projects', <ProjectsManager />],
             ['/learn/admin/quotes', <QuotesManager />],

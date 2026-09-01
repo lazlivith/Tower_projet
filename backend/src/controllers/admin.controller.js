@@ -309,7 +309,7 @@ export const getPendingEnrollments = async (req, res) => {
       include: {
         student: { select: { id: true, nom: true, email: true } },
         course: { select: { id: true, title: true, price: true } },
-        payments: { select: { amount: true, paymentMethod: true, paymentStatus: true, createdAt: true } }
+        payments: { select: { id: true, amount: true, paymentMethod: true, paymentStatus: true, createdAt: true } }
       },
       orderBy: { createdAt: 'desc' }
     });

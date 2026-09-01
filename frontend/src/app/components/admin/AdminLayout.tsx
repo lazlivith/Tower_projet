@@ -12,6 +12,7 @@ const TITLES: { match: (p: string) => boolean; label: string }[] = [
   { match: (p) => p.startsWith('/learn/admin/academy'), label: 'Classes & contenus' },
   { match: (p) => p.startsWith('/learn/admin/users'), label: 'Utilisateurs' },
   { match: (p) => p.startsWith('/learn/admin/payments'), label: 'Paiements' },
+  { match: (p) => p.startsWith('/learn/admin/documents'), label: 'Documents' },
   { match: (p) => p.startsWith('/learn/admin/publications'), label: 'Publications' },
   { match: (p) => p.startsWith('/learn/admin/projects'), label: 'Projets' },
   { match: (p) => p.startsWith('/learn/admin/quotes'), label: 'Devis' },

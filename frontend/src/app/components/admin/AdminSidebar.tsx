@@ -8,6 +8,7 @@ import {
   Newspaper,
   Image as ImageIcon,
   FileSignature,
+  FileText,
   CreditCard,
   UserCog,
   Globe,
@@ -43,6 +44,7 @@ const GROUPS: { title: string; items: { label: string; to: string; icon: any; en
     items: [
       { label: 'Utilisateurs', to: '/learn/admin/users', icon: Users2 },
       { label: 'Paiements', to: '/learn/admin/payments', icon: CreditCard },
+      { label: 'Documents', to: '/learn/admin/documents', icon: FileText },
     ],
   },
   {

@@ -21,6 +21,13 @@ import {
   createClassroomSchema,
   updateClassroomSchema,
 } from '../validators/academy.validator.js';
+import {
+  listDocuments,
+  createAttestation,
+  createQuoteDocument,
+  createInvoiceDocument,
+  createCertificateDocument,
+} from '../controllers/admin.documents.controller.js';
 
 const router = express.Router();
 
@@ -92,6 +99,13 @@ router.post('/instructors', validate({ body: createInstructorSchema }), createIn
 router.post('/classrooms', validate({ body: createClassroomSchema }), createClassroom);
 router.patch('/classrooms/:classroomId', validate({ body: updateClassroomSchema }), updateClassroom);
 router.delete('/classrooms/:classroomId', deleteClassroom);
+
+// ──── DOCUMENTS (certificat, facture, devis, attestation) ───────────
+router.get('/documents', listDocuments);
+router.post('/documents/attestation', createAttestation);
+router.post('/documents/certificate', createCertificateDocument);
+router.post('/documents/quote/:quoteId', createQuoteDocument);
+router.post('/documents/invoice/:paymentId', createInvoiceDocument);
 
 export default router;
 

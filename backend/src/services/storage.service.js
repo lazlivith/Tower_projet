@@ -36,6 +36,8 @@ const SCOPES = {
   courses: { byKind: true },
   certificates: { byKind: false },
   invoices: { byKind: false },
+  quotes: { byKind: false },
+  attestations: { byKind: false },
   avatars: { byKind: false },
   misc: { byKind: true },
 };

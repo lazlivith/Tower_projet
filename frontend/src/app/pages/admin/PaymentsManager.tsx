@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle, Clock, User, BookOpen, Loader, Ban, Plus, RefreshCw } from 'lucide-react';
-import api from '../../services/api';
+import { CheckCircle, Clock, User, BookOpen, Loader, Ban, Plus, RefreshCw, FileDown } from 'lucide-react';
+import api, { toAbsoluteUrl } from '../../services/api';
 import {
   PageHeader, Panel, Btn, Field, Select, Modal, EmptyState, Tabs,
   ToastHost, type Toast,
@@ -13,7 +13,7 @@ interface Enrollment {
   createdAt: string;
   accessStatus: string;
   paymentPlan: string;
-  payments?: { amount: number; paymentMethod: string; paymentStatus: string }[];
+  payments?: { id: string; amount: number; paymentMethod: string; paymentStatus: string }[];
 }
 
 type Tab = 'SUSPENDED' | 'ACTIVE';
@@ -32,6 +32,20 @@ export default function PaymentsManager() {
   const [granting, setGranting] = useState(false);
 
   const flash = (kind: Toast['kind'], msg: string) => setToast({ kind, msg });
+
+  const genInvoice = async (paymentId: string) => {
+    setBusy(paymentId);
+    try {
+      const r = await api.post(`/admin/documents/invoice/${paymentId}`, {});
+      const url = toAbsoluteUrl(r.data?.document?.url);
+      flash('ok', `Facture ${r.data?.document?.number ?? ''} générée.`);
+      if (url) window.open(url, '_blank', 'noopener');
+    } catch (e: any) {
+      flash('err', e?.response?.data?.message || 'Échec de la génération de la facture.');
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -151,15 +165,22 @@ export default function PaymentsManager() {
                   {new Date(e.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </div>
 
-                {tab === 'SUSPENDED' ? (
-                  <Btn variant="accent" onClick={() => setAccess(e, 'ACTIVE')} disabled={busy === e.id}>
-                    {busy === e.id ? <Loader className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />} Débloquer l'accès
-                  </Btn>
-                ) : (
-                  <Btn variant="danger" onClick={() => setAccess(e, 'SUSPENDED')} disabled={busy === e.id}>
-                    {busy === e.id ? <Loader className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Suspendre
-                  </Btn>
-                )}
+                <div className="flex items-center gap-2">
+                  {e.payments?.[0]?.id && (
+                    <Btn variant="ghost" onClick={() => genInvoice(e.payments![0].id)} disabled={busy === e.payments![0].id}>
+                      {busy === e.payments[0].id ? <Loader className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Facture
+                    </Btn>
+                  )}
+                  {tab === 'SUSPENDED' ? (
+                    <Btn variant="accent" onClick={() => setAccess(e, 'ACTIVE')} disabled={busy === e.id}>
+                      {busy === e.id ? <Loader className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />} Débloquer l'accès
+                    </Btn>
+                  ) : (
+                    <Btn variant="danger" onClick={() => setAccess(e, 'SUSPENDED')} disabled={busy === e.id}>
+                      {busy === e.id ? <Loader className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Suspendre
+                    </Btn>
+                  )}
+                </div>
               </div>
             </Panel>
           ))}

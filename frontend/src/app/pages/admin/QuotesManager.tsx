@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Mail } from 'lucide-react';
-import api from '../../services/api';
+import { CheckCircle, XCircle, Mail, FileDown, Loader2 } from 'lucide-react';
+import api, { toAbsoluteUrl } from '../../services/api';
 import {
   PageHeader, Panel, Btn, Chip, StatCard, EmptyState, Tabs, ToastHost, type Toast,
 } from '../../components/admin/ui';
@@ -18,6 +18,21 @@ export default function QuotesManager() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [filter, setFilter] = useState<Filter>('ALL');
   const [toast, setToast] = useState<Toast | null>(null);
+  const [genId, setGenId] = useState<string | null>(null);
+
+  const genDevisPdf = async (id: string) => {
+    setGenId(id);
+    try {
+      const r = await api.post(`/admin/documents/quote/${id}`, {});
+      const url = toAbsoluteUrl(r.data?.document?.url);
+      setToast({ kind: 'ok', msg: `Devis ${r.data?.reference ?? ''} généré.` });
+      if (url) window.open(url, '_blank', 'noopener');
+    } catch (e: any) {
+      setToast({ kind: 'err', msg: e?.response?.data?.message || 'Échec de la génération du devis.' });
+    } finally {
+      setGenId(null);
+    }
+  };
 
   useEffect(() => { fetchData(); }, []);
 
@@ -96,17 +111,23 @@ export default function QuotesManager() {
               {q.description && (
                 <div className="mt-3 rounded-lg bg-white/[0.03] p-3 text-[12.5px] text-[color:var(--a-ink-soft)]">{q.description}</div>
               )}
-              {q.status === 'PENDING' && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Btn size="sm" variant="accent" onClick={() => handleUpdateStatus(q.id, 'ACCEPTED')}>
-                    <CheckCircle className="h-3.5 w-3.5" /> Accepter
-                  </Btn>
-                  <a href={`mailto:${q.email}`} className="a-btn a-btn-ghost a-btn-sm"><Mail className="h-3.5 w-3.5" /> Contacter</a>
-                  <Btn size="sm" variant="danger" onClick={() => handleUpdateStatus(q.id, 'REJECTED')}>
-                    <XCircle className="h-3.5 w-3.5" /> Refuser
-                  </Btn>
-                </div>
-              )}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {q.status === 'PENDING' && (
+                  <>
+                    <Btn size="sm" variant="accent" onClick={() => handleUpdateStatus(q.id, 'ACCEPTED')}>
+                      <CheckCircle className="h-3.5 w-3.5" /> Accepter
+                    </Btn>
+                    <a href={`mailto:${q.email}`} className="a-btn a-btn-ghost a-btn-sm"><Mail className="h-3.5 w-3.5" /> Contacter</a>
+                    <Btn size="sm" variant="danger" onClick={() => handleUpdateStatus(q.id, 'REJECTED')}>
+                      <XCircle className="h-3.5 w-3.5" /> Refuser
+                    </Btn>
+                  </>
+                )}
+                <Btn size="sm" variant="ghost" onClick={() => genDevisPdf(q.id)} disabled={genId === q.id}>
+                  {genId === q.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />} Devis PDF
+                  {q.reference ? ` (${q.reference})` : ''}
+                </Btn>
+              </div>
             </Panel>
           ))}
         </div>

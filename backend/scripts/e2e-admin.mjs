@@ -432,6 +432,56 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     eq(r.status, 403, 'HTTP');
   });
 
+  // ---- 10b. Génération documentaire (certificat, facture, devis, attestation) ----
+  sec('Documents — génération automatisée');
+  created.docIds = [];
+  let eleveId2;
+  await check('POST /admin/documents/attestation → 201 + n° TS-ATT', async () => {
+    const eleve = await prisma.user.findUnique({ where: { email: 'eleve@tower.ma' } });
+    eleveId2 = eleve.id;
+    const r = await A.post('/api/admin/documents/attestation', { studentId: eleve.id, courseId: created.courseId });
+    eq(r.status, 201, 'HTTP');
+    assert(/^TS-ATT-\d{4}-\d{4}$/.test(r.body.document?.number || ''), `n° inattendu : ${r.body.document?.number}`);
+    assert(/^https?:\/\//.test(r.body.document?.url || ''), 'url absolue attendue');
+    created.docIds.push(r.body.document.id);
+  });
+  await check('POST /admin/documents/certificate → 201 + n° TS-CERT', async () => {
+    const r = await A.post('/api/admin/documents/certificate', { studentId: eleveId2, courseId: created.courseId, score: 88 });
+    eq(r.status, 201, 'HTTP');
+    assert(/^TS-CERT-\d{4}-\d{4}$/.test(r.body.document?.number || ''), 'n° certificat');
+    created.docIds.push(r.body.document.id);
+  });
+  await check('POST /admin/documents/quote/:id → 201 + Quote.reference renseignée', async () => {
+    const q = await api().post('/api/quotes/request').send({
+      clientName: 'E2E Devis', email: `e2e.devis.${stamp}@example.com`,
+      serviceType: 'Étude EXE', description: 'Demande de test suffisamment longue pour la validation Zod du devis.',
+    });
+    const qid = q.body.quote?.id ?? q.body.id;
+    const r = await A.post(`/api/admin/documents/quote/${qid}`, { amount: 125000 });
+    eq(r.status, 201, 'HTTP');
+    assert(/^TS-DEV-\d{4}-\d{4}$/.test(r.body.reference || ''), 'référence devis');
+    const updated = await prisma.quote.findUnique({ where: { id: qid } });
+    eq(updated.reference, r.body.reference, 'reference persistée sur le devis');
+    eq(Number(updated.amount), 125000, 'montant persisté');
+    created.docIds.push(r.body.document.id);
+    await prisma.quote.delete({ where: { id: qid } });
+  });
+  await check('Facture depuis un paiement (si présent) → 201', async () => {
+    const pay = await prisma.payment.findFirst({ orderBy: { createdAt: 'desc' } });
+    if (!pay) return; // aucun paiement en base — cas nominal sur DB fraîche
+    const r = await A.post(`/api/admin/documents/invoice/${pay.id}`, {});
+    eq(r.status, 201, 'HTTP');
+    assert(/^TS-FAC-\d{4}-\d{4}$/.test(r.body.document?.number || ''), 'n° facture');
+    created.docIds.push(r.body.document.id);
+  });
+  await check('GET /admin/documents → registre + filtre par type', async () => {
+    const all = await A.get('/api/admin/documents');
+    eq(all.status, 200, 'HTTP');
+    assert(created.docIds.every((id) => all.body.some((d) => d.id === id)), 'documents générés absents du registre');
+    const filtered = await A.get('/api/admin/documents?type=CERTIFICATE');
+    assert(filtered.body.every((d) => d.type === 'CERTIFICATE'), 'filtre type inopérant');
+  });
+
   // ---- 11. Espace formateur ----
   sec('Espace formateur — classes, contenu, calendrier, échanges');
   let profTok, profId, teachClassId, teachCourseId;
@@ -636,6 +686,7 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     if (created.projId) await prisma.project.deleteMany({ where: { id: created.projId } });
     if (created.quoteId) await prisma.quote.deleteMany({ where: { id: created.quoteId } });
     if (created.courseId) await prisma.course.delete({ where: { id: created.courseId } }); // cascade classrooms/enrollments
+    if (created.docIds?.length) await prisma.generatedDocument.deleteMany({ where: { id: { in: created.docIds } } });
     if (created.instructorIds.length) await prisma.user.deleteMany({ where: { id: { in: created.instructorIds } } });
     for (const u of created.uploads) await deleteFile(u).catch(() => {});
     console.log(`  ${C.g}✓${C.x} données de test supprimées (dont ${created.uploads.length} média(s))`);

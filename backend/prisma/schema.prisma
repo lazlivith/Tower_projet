@@ -93,6 +93,7 @@ model User {
   quizAttempts        QuizAttempt[]
   classMessages       ClassMessage[]       @relation("AuthoredClassMessages")
   assignedQuizzes     Quiz[]               @relation("AssignedQuizzes")
+  documents           GeneratedDocument[]  @relation("UserDocuments")
 
   @@map("users")
 }
@@ -367,9 +368,39 @@ model Quote {
   serviceType String      @map("service_type") @db.VarChar(100)
   description String      @db.Text
   status      QuoteStatus @default(PENDING)
+  amount      Decimal?    @db.Decimal(12, 2) // montant proposé (HT), renseigné par l'admin
+  reference   String?     @unique @db.VarChar(40) // n° de devis (ex. TS-DEV-2026-0007)
+  validUntil  DateTime?   @map("valid_until")
   createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamp
 
   @@map("quotes")
+}
+
+enum DocumentType {
+  CERTIFICATE
+  INVOICE
+  QUOTE
+  ENROLLMENT_ATTESTATION
+}
+
+/// Registre des documents PDF générés (certificats, factures, devis, attestations).
+model GeneratedDocument {
+  id        String       @id @default(uuid()) @db.Uuid
+  type      DocumentType
+  number    String       @unique @db.VarChar(40)
+  title     String       @db.VarChar(255)
+  url       String       @db.VarChar(500)
+  userId    String?      @map("user_id") @db.Uuid
+  courseId  String?      @map("course_id") @db.Uuid
+  quoteId   String?      @map("quote_id") @db.Uuid
+  paymentId String?      @map("payment_id") @db.Uuid
+  meta      Json?
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamp
+
+  user User? @relation("UserDocuments", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt])
+  @@map("generated_documents")
 }
 
 model Publication {
