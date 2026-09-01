@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { ArrowUpRight, ArrowDown, ArrowRight, Box, Ruler, Waves, Quote } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
 import { useReveal } from '../../hooks/useReveal';
+import StructureBackground from '../../components/vitrine/StructureBackground';
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=2200&q=80';
 const PLACEHOLDER = 'https://placehold.co/900x700/0d1117/38bdf8?text=Tower+Structure';
@@ -67,9 +68,13 @@ export default function Home() {
       </Helmet>
 
       {/* ---------- HERO ---------- */}
-      <section className="relative -mt-[66px] flex h-[100svh] min-h-[620px] w-full items-end overflow-hidden bg-[color:var(--paper)]">
-        <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1117]/80 via-[#0d1117]/55 to-[#0d1117]" />
+      <section className="relative -mt-[66px] flex h-[82vh] min-h-[500px] max-h-[760px] w-full items-end overflow-hidden bg-[color:var(--paper)]">
+        {/* photo de fond très atténuée */}
+        <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.18]" />
+        {/* maillage éléments finis animé — fond dynamique */}
+        <StructureBackground fixed={false} density={2} intensity={2} accent="#38bdf8" />
+        {/* dégradé de lisibilité (laisse respirer le maillage en haut) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1117]/35 via-[#0d1117]/45 to-[#0d1117]" />
         {/* grille blueprint renforcée sur le hero */}
         <div
           className="absolute inset-0 opacity-[0.12]"
@@ -80,17 +85,17 @@ export default function Home() {
             maskImage: 'radial-gradient(ellipse 90% 70% at 30% 90%, #000 20%, transparent 75%)',
           }}
         />
-        <div className="relative mx-auto w-full max-w-[1400px] px-5 pb-16 sm:px-8 lg:px-12">
+        <div className="relative mx-auto w-full max-w-[1400px] px-5 pb-14 sm:px-8 lg:px-12">
           <p className="eyebrow text-[color:var(--accent)]">Bureau d'études structure · Centre de formation BIM</p>
-          <h1 className="mt-5 max-w-5xl text-[2.15rem] font-medium leading-[1.05] text-white sm:text-5xl lg:text-[4.2rem]">
+          <h1 className="mt-4 max-w-4xl text-[2rem] font-medium leading-[1.06] text-white sm:text-[2.75rem] lg:text-[3.6rem]">
             <span className="grad-text">L'ingénierie structurelle</span> d'excellence et la montée en{' '}
             <span className="grad-text">compétences BIM</span>.
           </h1>
-          <p className="mt-5 max-w-xl text-[14.5px] leading-relaxed text-[color:var(--ink-soft)]">
+          <p className="mt-4 max-w-xl text-[14px] leading-relaxed text-[color:var(--ink-soft)]">
             De l'étude de structure complexe à l'optimisation des dossiers d'exécution — nous accompagnons
             les maîtres d'ouvrage et formons les ingénieurs de demain.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-4">
+          <div className="mt-7 flex flex-wrap items-center gap-4">
             <Link to="/quote" className="btn btn-solid">Demander une étude <ArrowUpRight className="w-4 h-4" /></Link>
             <Link to="/formations" className="btn btn-outline">Découvrir nos formations <ArrowRight className="w-4 h-4" /></Link>
           </div>

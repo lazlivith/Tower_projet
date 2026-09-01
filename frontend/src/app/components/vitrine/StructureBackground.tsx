@@ -1,15 +1,31 @@
 import { useEffect, useRef } from 'react';
 
+interface Props {
+  accent?: string;
+  /** true = plein écran fixe (fond global) · false = absolu, remplit le parent (hero) */
+  fixed?: boolean;
+  /** multiplicateur de densité de nœuds */
+  density?: number;
+  /** multiplicateur d'opacité / luminosité */
+  intensity?: number;
+  className?: string;
+}
+
 /**
- * Fond dynamique « maillage éléments finis » : réseau de nœuds reliés par de
- * fines lignes néon, en dérive lente, révélé plus fortement autour du curseur
- * (effet projecteur). Rendu en <canvas>, une seule instance montée dans le layout.
+ * Fond animé « maillage éléments finis » : réseau de nœuds reliés par de fines
+ * lignes néon, dérive lente, révélé plus fortement autour du curseur (projecteur).
  */
-export default function StructureBackground({ accent = '#38bdf8' }: { accent?: string }) {
+export default function StructureBackground({
+  accent = '#38bdf8',
+  fixed = true,
+  density = 1,
+  intensity = 1,
+  className = '',
+}: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const canvas = ref.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -19,50 +35,52 @@ export default function StructureBackground({ accent = '#38bdf8' }: { accent?: s
     let raf = 0;
     let nodes: { x: number; y: number; vx: number; vy: number }[] = [];
     const mouse = { x: -9999, y: -9999 };
-
     const rgb = hexToRgb(accent);
-    const LINK_DIST = 150;
-    const SPOTLIGHT = 260;
+    const LINK_DIST = 155;
+    const SPOTLIGHT = 280;
 
     const resize = () => {
-      w = canvas.clientWidth;
-      h = canvas.clientHeight;
+      const rect = canvas.getBoundingClientRect();
+      w = rect.width || window.innerWidth;
+      h = rect.height || window.innerHeight;
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      const target = Math.round(Math.min(90, Math.max(28, (w * h) / 22000)));
+      const target = Math.round(Math.min(140, Math.max(24, (w * h) / 20000)) * density);
       nodes = Array.from({ length: target }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.22,
-        vy: (Math.random() - 0.5) * 0.22,
+        vx: (Math.random() - 0.5) * 0.28,
+        vy: (Math.random() - 0.5) * 0.28,
       }));
+    };
+
+    const localMouse = () => {
+      const rect = canvas.getBoundingClientRect();
+      return { x: mouse.x - rect.left, y: mouse.y - rect.top };
     };
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
+      const m = localMouse();
 
       for (const n of nodes) {
-        n.x += n.vx;
-        n.y += n.vy;
+        n.x += n.vx; n.y += n.vy;
         if (n.x < 0 || n.x > w) n.vx *= -1;
         if (n.y < 0 || n.y > h) n.vy *= -1;
       }
 
-      // Liaisons (arêtes du maillage)
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const a = nodes[i], b = nodes[j];
           const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d > LINK_DIST) continue;
           const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-          const md = Math.hypot(mx - mouse.x, my - mouse.y);
-          const spot = Math.max(0, 1 - md / SPOTLIGHT);
-          const base = (1 - d / LINK_DIST) * 0.09;
-          const alpha = base + spot * 0.35 * (1 - d / LINK_DIST);
-          if (alpha < 0.015) continue;
+          const spot = Math.max(0, 1 - Math.hypot(mx - m.x, my - m.y) / SPOTLIGHT);
+          const base = (1 - d / LINK_DIST) * 0.14 * intensity;
+          const alpha = base + spot * 0.4 * (1 - d / LINK_DIST);
+          if (alpha < 0.02) continue;
           ctx.strokeStyle = `rgba(${rgb},${alpha.toFixed(3)})`;
           ctx.lineWidth = 1;
           ctx.beginPath();
@@ -72,14 +90,12 @@ export default function StructureBackground({ accent = '#38bdf8' }: { accent?: s
         }
       }
 
-      // Nœuds
       for (const n of nodes) {
-        const md = Math.hypot(n.x - mouse.x, n.y - mouse.y);
-        const spot = Math.max(0, 1 - md / SPOTLIGHT);
-        const alpha = 0.18 + spot * 0.6;
-        ctx.fillStyle = `rgba(${rgb},${alpha.toFixed(3)})`;
+        const spot = Math.max(0, 1 - Math.hypot(n.x - m.x, n.y - m.y) / SPOTLIGHT);
+        const alpha = (0.25 + spot * 0.6) * intensity;
+        ctx.fillStyle = `rgba(${rgb},${Math.min(1, alpha).toFixed(3)})`;
         ctx.beginPath();
-        ctx.arc(n.x, n.y, spot > 0.5 ? 2 : 1.4, 0, Math.PI * 2);
+        ctx.arc(n.x, n.y, spot > 0.5 ? 2.2 : 1.5, 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -94,12 +110,8 @@ export default function StructureBackground({ accent = '#38bdf8' }: { accent?: s
     };
 
     resize();
-    if (reduce) {
-      draw(); // rendu statique unique
-      cancelAnimationFrame(raf);
-    } else {
-      raf = requestAnimationFrame(draw);
-    }
+    if (reduce) draw();
+    else raf = requestAnimationFrame(draw);
     window.addEventListener('resize', resize);
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseout', onLeave);
@@ -112,9 +124,15 @@ export default function StructureBackground({ accent = '#38bdf8' }: { accent?: s
       window.removeEventListener('mouseout', onLeave);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [accent]);
+  }, [accent, density, intensity]);
 
-  return <canvas ref={ref} className="fx-canvas" aria-hidden="true" />;
+  return (
+    <canvas
+      ref={ref}
+      aria-hidden="true"
+      className={`${fixed ? 'fx-canvas' : 'pointer-events-none absolute inset-0 h-full w-full'} ${className}`}
+    />
+  );
 }
 
 function hexToRgb(hex: string): string {

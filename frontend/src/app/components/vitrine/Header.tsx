@@ -27,8 +27,6 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [atFooter, setAtFooter] = useState(false);
 
-  const overlayHome = pathname === '/';
-
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
@@ -57,26 +55,24 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
     return user.isActive && user.hasActiveAccess ? '/learn/student' : '/learn/restricted';
   };
 
-  const solid = scrolled || !overlayHome || open;
-  const dark = solid;
   const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 will-change-transform ${
+        className={`fixed top-0 inset-x-0 z-50 border-b backdrop-blur-xl transition-all duration-500 will-change-transform ${
           atFooter ? 'header-hidden' : ''
         } ${
-          solid
-            ? 'bg-[color:var(--color-paper)]/80 backdrop-blur-xl border-b border-[color:var(--color-line)] shadow-[0_1px_24px_-10px_rgba(0,0,0,0.35)]'
-            : 'bg-transparent'
+          scrolled
+            ? 'bg-[color:var(--color-paper)]/85 border-[color:var(--color-line)] shadow-[0_1px_24px_-10px_rgba(0,0,0,0.4)]'
+            : 'bg-[color:var(--color-paper)]/55 border-transparent'
         }`}
       >
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-12">
           <div className="flex h-[66px] items-center justify-between">
             <Link
               to="/"
-              className={`font-[family-name:var(--font-display)] text-[15px] font-semibold tracking-[0.14em] uppercase transition-colors ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}
+              className="font-[family-name:var(--font-display)] text-[15px] font-semibold tracking-[0.14em] uppercase text-[color:var(--color-ink)]"
             >
               Tower&nbsp;Structure
             </Link>
@@ -87,9 +83,9 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
                 <div key={n.to} className="group relative">
                   <Link
                     to={n.to}
-                    className={`flex items-center gap-1 px-3.5 py-2 text-[13.5px] transition-colors ${
-                      dark ? 'text-[color:var(--color-ink)]' : 'text-white'
-                    } ${isActive(n.to) ? '' : 'opacity-80 hover:opacity-100'}`}
+                    className={`flex items-center gap-1 px-3.5 py-2 text-[13.5px] text-[color:var(--color-ink)] transition-opacity ${
+                      isActive(n.to) ? '' : 'opacity-70 hover:opacity-100'
+                    }`}
                   >
                     <span className="relative">
                       {n.label}
@@ -135,11 +131,7 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
                 onClick={onToggleTheme}
                 aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
                 title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
-                className={`grid h-9 w-9 place-items-center rounded-full border text-[15px] transition-colors ${
-                  dark
-                    ? 'border-[color:var(--color-line)] text-[color:var(--color-ink)] hover:border-[color:var(--color-accent)]'
-                    : 'border-white/30 text-white hover:border-white/70'
-                }`}
+                className="grid h-9 w-9 place-items-center rounded-full border border-[color:var(--color-line)] text-[15px] text-[color:var(--color-ink)] transition-colors hover:border-[color:var(--color-accent)]"
               >
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
@@ -147,10 +139,10 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
               <div className="hidden md:flex items-center gap-3">
                 {user ? (
                   <>
-                    <Link to={dashboardLink()} className={`text-[13px] hover:text-[color:var(--color-accent)] ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}>
+                    <Link to={dashboardLink()} className="text-[13px] text-[color:var(--color-ink)] hover:text-[color:var(--color-accent)]">
                       {user.nom?.split(' ')[0]}
                     </Link>
-                    <button onClick={() => { logout(); navigate('/'); }} className={`text-[13px] opacity-50 hover:opacity-100 ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`}>
+                    <button onClick={() => { logout(); navigate('/'); }} className="text-[13px] text-[color:var(--color-ink)] opacity-50 hover:opacity-100">
                       Déconnexion
                     </button>
                   </>
@@ -162,7 +154,7 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
                 )}
               </div>
 
-              <button className={`md:hidden ${dark ? 'text-[color:var(--color-ink)]' : 'text-white'}`} onClick={() => setOpen((o) => !o)} aria-label="Menu">
+              <button className="md:hidden text-[color:var(--color-ink)]" onClick={() => setOpen((o) => !o)} aria-label="Menu">
                 {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
