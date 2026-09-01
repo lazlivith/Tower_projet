@@ -12,7 +12,11 @@ import { render as renderAttestation } from './templates/attestation.js';
  *   const { url, number } = await generateDocument('INVOICE', { ... });
  *
  * Le PDF est poussé via `storeFile` (Cloudinary si configuré, sinon disque) dans
- * le dossier dédié, et une ligne `GeneratedDocument` est enregistrée (n° séquentiel).
+ * le dossier dédié, et une ligne `GeneratedDocument` est enregistrée.
+ *
+ * - `data.number` fourni  → régénération : on **remplace** (upsert) le document du même numéro.
+ * - `data.number` absent  → numéro attribué automatiquement ; en cas de collision
+ *   (course concurrent), on retente avec un numéro frais.
  */
 
 const CONFIG = {
@@ -24,48 +28,51 @@ const CONFIG = {
 
 export const DOCUMENT_TYPES = Object.keys(CONFIG);
 
-/**
- * @param {'CERTIFICATE'|'INVOICE'|'QUOTE'|'ENROLLMENT_ATTESTATION'} type
- * @param {object} data                 données propres au template (voir chaque template)
- * @param {object} [opts]
- * @param {string} [opts.title]         titre lisible (sinon dérivé)
- * @param {string} [opts.userId]        bénéficiaire (élève / destinataire)
- * @param {string} [opts.courseId]
- * @param {string} [opts.quoteId]
- * @param {string} [opts.paymentId]
- * @param {object} [opts.meta]
- * @param {boolean} [opts.register=true] enregistre une ligne GeneratedDocument
- */
 export async function generateDocument(type, data, opts = {}) {
   const conf = CONFIG[type];
   if (!conf) throw Object.assign(new Error(`Type de document inconnu : ${type}`), { status: 400 });
 
-  const number = data.number || (await nextNumber(type));
-  const bytes = await conf.render({ ...data, number });
+  const explicitNumber = Boolean(data.number);
+  let number = data.number || (await nextNumber(type));
 
-  const asset = await storeFile({
-    buffer: Buffer.from(bytes),
-    originalname: `${number}.pdf`,
-    kind: 'pdf',
-    scope: conf.scope,
-  });
+  const buildAsset = async () => {
+    const bytes = await conf.render({ ...data, number });
+    return storeFile({ buffer: Buffer.from(bytes), originalname: `${number}.pdf`, kind: 'pdf', scope: conf.scope });
+  };
 
-  let record = null;
-  if (opts.register !== false) {
-    record = await prisma.generatedDocument.create({
-      data: {
-        type,
-        number,
-        title: opts.title || `${conf.label} — ${data.studentName || data.clientName || ''}`.trim(),
-        url: asset.url,
-        userId: opts.userId || null,
-        courseId: opts.courseId || null,
-        quoteId: opts.quoteId || null,
-        paymentId: opts.paymentId || null,
-        meta: opts.meta || undefined,
-      },
-    });
+  let asset = await buildAsset();
+
+  if (opts.register === false) {
+    return { id: null, type, number, url: asset.url, provider: asset.provider };
   }
 
-  return { id: record?.id ?? null, type, number, url: asset.url, provider: asset.provider };
+  const baseData = () => ({
+    type,
+    number,
+    title: opts.title || `${conf.label} — ${data.studentName || data.clientName || ''}`.trim(),
+    url: asset.url,
+    userId: opts.userId || null,
+    courseId: opts.courseId || null,
+    quoteId: opts.quoteId || null,
+    paymentId: opts.paymentId || null,
+    meta: opts.meta || undefined,
+  });
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const record = explicitNumber
+        ? await prisma.generatedDocument.upsert({
+            where: { number },
+            update: { url: asset.url, title: baseData().title, meta: opts.meta || undefined },
+            create: baseData(),
+          })
+        : await prisma.generatedDocument.create({ data: baseData() });
+      return { id: record.id, type, number, url: asset.url, provider: asset.provider };
+    } catch (e) {
+      if (e?.code !== 'P2002' || explicitNumber) throw e;
+      number = await nextNumber(type); // collision de numéro auto → on régénère
+      asset = await buildAsset();
+    }
+  }
+  throw new Error("Impossible d'attribuer un numéro de document unique.");
 }

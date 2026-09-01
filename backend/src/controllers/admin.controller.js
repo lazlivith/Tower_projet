@@ -1,6 +1,7 @@
 import { generateCertificatePDF } from '../services/pdf.service.js';
 import prisma from '../config/prisma.js';
 import { onboardInstructorService } from '../services/admin.service.js';
+import { ensureEnrollmentAttestation } from '../services/documents/hooks.js';
 
 export const getUsers = async (req, res) => {
   try {
@@ -178,6 +179,9 @@ export const enrollStudentInClass = async (req, res) => {
         skipDuplicates: true
       });
     }
+
+    // Attestation d'inscription générée automatiquement (non bloquant)
+    ensureEnrollmentAttestation(student.id, courseId).catch(() => {});
 
     return res.status(201).json({
       message: `L'étudiant ${student.nom} a été inscrit avec succès dans la classe : ${classroom.name}`,
@@ -357,6 +361,7 @@ export const validateEnrollmentAccess = async (req, res) => {
           message: `Votre accès à la formation « ${enrollment.course.title} » a été activé par l'administration.`
         }
       });
+      ensureEnrollmentAttestation(enrollment.studentId, enrollment.courseId).catch(() => {});
     }
 
     return res.status(200).json({

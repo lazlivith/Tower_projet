@@ -374,9 +374,9 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     eq(u2.isActive, true, 'isActive après UNBLOCK');
   });
 
-  // ---- 9. Devis (formulaire vitrine → admin) ----
+  // ---- 9. Devis (formulaire vitrine → admin, avec PDF auto) ----
   sec('Devis — du formulaire public au back-office');
-  await check('POST /quotes/request (comme la vitrine) → 201', async () => {
+  await check('POST /quotes/request → 201 + PDF généré + managers notifiés', async () => {
     const r = await api().post('/api/quotes/request').send({
       clientName: 'E2E Client', email: `e2e.client.${stamp}@example.com`,
       serviceType: 'Étude EXE', description: 'Demande de test suffisamment longue pour passer la validation Zod.',
@@ -384,6 +384,14 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     eq(r.status, 201, 'HTTP');
     created.quoteId = r.body.quote?.id ?? r.body.id ?? r.body.data?.id;
     assert(created.quoteId, `id devis manquant: ${JSON.stringify(r.body)}`);
+    assert(/^TS-DEV-\d{4}-\d{4}$/.test(r.body.reference || ''), `référence auto manquante : ${r.body.reference}`);
+    assert(/^https?:\/\//.test(r.body.documentUrl || ''), 'documentUrl (PDF) manquant');
+    const doc = await prisma.generatedDocument.findFirst({ where: { number: r.body.reference } });
+    assert(doc, 'GeneratedDocument du devis absent');
+    (created.docIds ||= []).push(doc.id);
+    const notif = await prisma.notification.findFirst({ where: { message: { contains: r.body.reference } } });
+    assert(notif, 'aucune notification manager pour le devis');
+    await prisma.notification.deleteMany({ where: { message: { contains: r.body.reference } } });
   });
   await check('GET /quotes (admin) → devis présent', async () => {
     const r = await A.get('/api/quotes');
@@ -678,6 +686,25 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     for (const id of [classQuizId, personalQuizId]) if (id) await I().del(`/api/instructor/quizzes/${id}`);
   });
 
+  // ---- 13. Espace personnel de l'élève (menu utilisateur) ----
+  sec('Espace personnel élève — documents & rapports');
+  await check("L'inscription a généré une attestation → GET /student/documents la liste", async () => {
+    const r = await auth(eleveTok)(api().get('/api/student/documents'));
+    eq(r.status, 200, 'HTTP');
+    assert(Array.isArray(r.body), 'tableau attendu');
+    assert(r.body.some((d) => d.type === 'ENROLLMENT_ATTESTATION' && d.courseId === created.courseId),
+      "attestation d'inscription absente des fichiers personnels");
+  });
+  await check('GET /student/reports → 200 (liste des travaux rendus)', async () => {
+    const r = await auth(eleveTok)(api().get('/api/student/reports'));
+    eq(r.status, 200, 'HTTP');
+    assert(Array.isArray(r.body), 'tableau attendu');
+  });
+  await check('GET /api/notifications (élève) → 200', async () => {
+    const r = await auth(eleveTok)(api().get('/api/notifications'));
+    eq(r.status, 200, 'HTTP');
+  });
+
   // ─────────────────────────── cleanup ───────────────────────────
   sec('Nettoyage');
   try {
@@ -687,6 +714,7 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     if (created.quoteId) await prisma.quote.deleteMany({ where: { id: created.quoteId } });
     if (created.courseId) await prisma.course.delete({ where: { id: created.courseId } }); // cascade classrooms/enrollments
     if (created.docIds?.length) await prisma.generatedDocument.deleteMany({ where: { id: { in: created.docIds } } });
+    if (created.courseId) await prisma.generatedDocument.deleteMany({ where: { courseId: created.courseId } }); // attestations/certifs auto
     if (created.instructorIds.length) await prisma.user.deleteMany({ where: { id: { in: created.instructorIds } } });
     for (const u of created.uploads) await deleteFile(u).catch(() => {});
     console.log(`  ${C.g}✓${C.x} données de test supprimées (dont ${created.uploads.length} média(s))`);

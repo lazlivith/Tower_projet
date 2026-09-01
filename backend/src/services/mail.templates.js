@@ -126,3 +126,16 @@ export const quoteReceivedEmail = ({ clientName, serviceType }) =>
       <p>Nous avons bien reçu votre demande de devis pour <strong>${serviceType}</strong>.</p>
       <p>Notre équipe vous recontactera sous 48h.</p>`,
   });
+
+/** Notification interne : nouvelle demande de devis + lien du PDF généré. */
+export const quoteForAdminEmail = ({ clientName, email, serviceType, description, reference, documentUrl }) =>
+  renderEmail({
+    title: `Nouveau devis — ${reference}`,
+    preheader: `Demande de ${clientName} (${serviceType}).`,
+    bodyHtml: `
+      <p><strong>${clientName}</strong> — ${email}</p>
+      <p><strong>Prestation :</strong> ${serviceType}</p>
+      <p><strong>Description :</strong><br/>${(description || '').replace(/</g, '&lt;')}</p>
+      <p>Le devis PDF a été généré automatiquement.</p>`,
+    cta: documentUrl ? { label: 'Ouvrir le devis (PDF)', url: documentUrl } : undefined,
+  });

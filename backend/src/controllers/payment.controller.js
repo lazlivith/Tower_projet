@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { sendMail } from '../services/mail.service.js';
 import { enrollmentAccessEmail, enrollmentPendingEmail } from '../services/mail.templates.js';
 import { generateInvoicePDF } from '../services/pdf.service.js';
+import { ensureEnrollmentAttestation } from '../services/documents/hooks.js';
 import Stripe from 'stripe';
 
 // En mode dev, si STRIPE_SECRET_KEY n'est pas configurée, on crée un objet mock
@@ -54,13 +55,14 @@ export const validateStudentPayment = async (req, res) => {
       });
     });
 
-    // Générer la facture PDF sur disque
+    // Générer la facture PDF (Cloudinary/disque) + l'attestation d'inscription
     try {
       const invoiceUrl = await generateInvoicePDF(payment, payment.enrollment.student, payment.enrollment.course);
       console.log(`[PDF] Facture générée : ${invoiceUrl}`);
     } catch (err) {
       console.error("[PDF] Erreur facture manuelle:", err.message);
     }
+    ensureEnrollmentAttestation(payment.enrollment.studentId, payment.enrollment.courseId).catch(() => {});
 
     // Notification Prisma automatique
     await prisma.notification.create({

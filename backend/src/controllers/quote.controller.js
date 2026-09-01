@@ -1,24 +1,61 @@
 import prisma from '../config/prisma.js';
 import { sendMail } from '../services/mail.service.js';
-import { quoteReceivedEmail } from '../services/mail.templates.js';
+import { quoteReceivedEmail, quoteForAdminEmail } from '../services/mail.templates.js';
+import { generateDocument } from '../services/documents/index.js';
+import { nextNumber } from '../services/documents/numbering.js';
 
-// Public: Demander un devis
+// Public: Demander un devis — génère aussitôt le PDF pour l'admin.
 export const createQuote = async (req, res) => {
   const { clientName, email, serviceType, description } = req.body;
   try {
+    const reference = await nextNumber('QUOTE');
     const quote = await prisma.quote.create({
-      data: { clientName, email, serviceType, description }
+      data: { clientName, email, serviceType, description, reference },
     });
 
-    // Email de confirmation au client
+    // 1) PDF du devis (montant "sur étude" à ce stade)
+    let documentUrl = null;
+    try {
+      const doc = await generateDocument(
+        'QUOTE',
+        { number: reference, clientName, clientEmail: email, serviceType, description, amount: null, currency: 'MAD' },
+        { quoteId: quote.id, title: `Devis — ${clientName}` }
+      );
+      documentUrl = doc.url;
+    } catch (e) {
+      console.error('[QUOTE] génération PDF:', e.message);
+    }
+
+    // 2) Notification interne aux managers
+    const managers = await prisma.user.findMany({ where: { role: 'MANAGER' }, select: { id: true } });
+    if (managers.length) {
+      await prisma.notification.createMany({
+        data: managers.map((m) => ({
+          userId: m.id,
+          type: 'SYSTEM',
+          message: `Nouvelle demande de devis ${reference} — ${clientName} (${serviceType})`,
+        })),
+      });
+    }
+
+    // 3) Emails : accusé client + notification admin (avec le PDF)
     await sendMail({
       to: email,
-      subject: 'Votre demande de devis — TowerStructure',
-      html: quoteReceivedEmail({ clientName, serviceType })
+      subject: 'Votre demande de devis — Tower Structure',
+      html: quoteReceivedEmail({ clientName, serviceType }),
     });
+    const adminTo = process.env.ADMIN_NOTIFY_EMAIL;
+    if (adminTo) {
+      await sendMail({
+        to: adminTo,
+        subject: `Nouveau devis ${reference} — ${clientName}`,
+        html: quoteForAdminEmail({ clientName, email, serviceType, description, reference, documentUrl }),
+      });
+    }
 
-    return res.status(201).json({ message: "Devis envoyé avec succès", quote });
+    return res.status(201).json({ message: 'Devis envoyé avec succès', quote, reference, documentUrl });
   } catch (error) {
+    console.error('[QUOTE] createQuote:', error);
     return res.status(500).json({ message: "Erreur lors de l'envoi du devis." });
   }
 };

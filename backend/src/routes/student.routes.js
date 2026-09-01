@@ -4,6 +4,7 @@ import { restrictToRole } from '../middlewares/role.middleware.js';
 import { getMyDashboard, toggleLessonComplete } from '../controllers/student.controller.js';
 import { getMyCertificates } from '../controllers/certificate.controller.js';
 import { getMyAssignedQuizzes, getQuizForStudent } from '../controllers/quiz.controller.js';
+import { getMyDocuments, getMyReports } from '../controllers/student.files.controller.js';
 
 const router = express.Router();
 
@@ -21,6 +22,10 @@ router.get('/certificates', getMyCertificates);
 // Quiz assignés (classe entière ou personnel) — la soumission se fait via POST /api/lessons/quiz/:id/submit
 router.get('/quizzes', getMyAssignedQuizzes);
 router.get('/quizzes/:id', getQuizForStudent);
+
+// Espace personnel : documents générés + rapports (travaux rendus)
+router.get('/documents', getMyDocuments);
+router.get('/reports', getMyReports);
 
 // Marquer une leçon comme complétée (protégé spécifiquement par l'inscription active)
 router.patch('/lessons/:lessonId/toggle', checkActiveEnrollmentForLesson, toggleLessonComplete);

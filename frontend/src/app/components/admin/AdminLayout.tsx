@@ -1,6 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
+import UserMenu from '../learn/layout/UserMenu';
 
 const KEY = 'tower_admin_sidebar_collapsed';
 
@@ -53,8 +54,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <span className="text-[color:var(--a-ink-dim)]">/</span>
             <span className="font-semibold text-[color:var(--a-ink)]">{crumb}</span>
           </div>
-          <div className="text-[12px] text-[color:var(--a-ink-dim)]">
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          <div className="flex items-center gap-4">
+            <div className="hidden text-[12px] text-[color:var(--a-ink-dim)] lg:block">
+              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </div>
+            <UserMenu variant="dark" />
           </div>
         </header>
 

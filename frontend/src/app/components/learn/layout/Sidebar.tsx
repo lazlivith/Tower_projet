@@ -1,10 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react'; // ou framer-motion selon la version
 import {
   Home,
   BookOpen,
   Users,
-  LogOut,
   Menu,
   X,
   FileText,
@@ -14,7 +13,6 @@ import {
   Award,
   Image,
   Globe,
-  Bell,
   HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -25,13 +23,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/learn/login');
-  };
+  const { user } = useAuth();
 
   const getNavigationGroups = () => {
     let mainNav: any[] = [];
@@ -64,7 +56,6 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
         { icon: HelpCircle, label: 'Mes quiz', path: '/learn/student/quizzes' },
         { icon: Calendar, label: 'Sessions', path: '/learn/student/calendar' },
         { icon: Award, label: 'Certificats', path: '/learn/student/certificates' },
-        { icon: Bell, label: 'Notifications', path: '/learn/student/notifications' },
       ];
     }
 
@@ -236,25 +227,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
             )}
           </AnimatePresence>
         </button>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-2 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors w-full text-left group whitespace-nowrap"
-          title={!sidebarOpen ? 'Déconnexion' : undefined}
-        >
-          <LogOut className="w-5 h-5 flex-shrink-0 text-gray-400 group-hover:text-red-400 transition-colors" />
-          <AnimatePresence>
-            {sidebarOpen && (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-sm font-medium text-gray-300 group-hover:text-red-400 transition-colors"
-              >
-                Déconnexion
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
+        {/* La déconnexion est dans le menu utilisateur (en-tête). */}
       </div>
 
       <style>{`

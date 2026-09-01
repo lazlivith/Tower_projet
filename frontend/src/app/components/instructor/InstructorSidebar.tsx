@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users2,
@@ -8,11 +8,9 @@ import {
   ClipboardCheck,
   FileSpreadsheet,
   Globe,
-  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface Props {
   collapsed: boolean;
@@ -30,8 +28,6 @@ const ITEMS: { label: string; to: string; icon: any; end?: boolean }[] = [
 ];
 
 export default function InstructorSidebar({ collapsed, onToggle }: Props) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const { pathname } = useLocation();
 
   const isActive = (to: string, end?: boolean) =>
@@ -88,31 +84,12 @@ export default function InstructorSidebar({ collapsed, onToggle }: Props) {
           {!collapsed && <span>Site vitrine</span>}
         </Link>
         <button
-          onClick={() => { logout(); navigate('/learn/login'); }}
-          title={collapsed ? 'Déconnexion' : undefined}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium text-[color:var(--a-ink-soft)] transition-colors hover:bg-[color:color-mix(in_srgb,var(--a-danger)_14%,transparent)] hover:text-[color:var(--a-danger)] ${collapsed ? 'justify-center' : ''}`}
-        >
-          <LogOut className="h-[18px] w-[18px] flex-shrink-0" strokeWidth={2} />
-          {!collapsed && <span>Déconnexion</span>}
-        </button>
-        <button
           onClick={onToggle}
           className={`mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[12px] text-[color:var(--a-ink-dim)] transition-colors hover:bg-white/5 hover:text-[color:var(--a-ink)] ${collapsed ? 'justify-center' : ''}`}
         >
           {collapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
           {!collapsed && <span>Réduire</span>}
         </button>
-        {!collapsed && user && (
-          <div className="mt-2 flex items-center gap-2.5 rounded-lg bg-white/[0.03] px-3 py-2">
-            <div className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full border border-[color:var(--a-line)] text-[13px] font-bold text-[color:var(--a-accent)]">
-              {user.nom?.charAt(0)?.toUpperCase() || 'F'}
-            </div>
-            <div className="min-w-0">
-              <div className="truncate text-[12px] font-semibold text-[color:var(--a-ink)]">{user.nom}</div>
-              <div className="text-[10px] uppercase tracking-[0.14em] text-[color:var(--a-ink-dim)]">Formateur</div>
-            </div>
-          </div>
-        )}
       </div>
     </aside>
   );

@@ -30,8 +30,12 @@ import PaymentPage from './pages/learn/payment/PaymentPage';
 import PaymentResult from './pages/learn/payment/PaymentResult';
 
 // User-menu shared pages
+import RoleShell from './components/shell/RoleShell';
 import ProfilePage from './pages/learn/ProfilePage';
-import ComingSoon from './pages/learn/ComingSoon';
+import NotificationsPage from './pages/learn/NotificationsPage';
+import PersonalFiles from './pages/learn/PersonalFiles';
+import ReportsPage from './pages/learn/ReportsPage';
+import FaqPage from './pages/learn/FaqPage';
 import SessionRoom from './pages/learn/SessionRoom';
 
 // Student Pages
@@ -91,13 +95,18 @@ export default function App() {
           <Route path="/learn/login" element={<Login />} />
           <Route path="/learn/first-login" element={<FirstLogin />} />
 
-          {/* Menu utilisateur — pages transverses (tous rôles authentifiés) */}
-          <Route path="/learn/profile" element={<ProtectedRoute><DashboardLayout><ProfilePage /></DashboardLayout></ProtectedRoute>} />
-          <Route path="/learn/notes" element={<ProtectedRoute><DashboardLayout><ComingSoon title="Notes" /></DashboardLayout></ProtectedRoute>} />
-          <Route path="/learn/calendar" element={<ProtectedRoute><DashboardLayout><ComingSoon title="Calendrier" /></DashboardLayout></ProtectedRoute>} />
-          <Route path="/learn/files" element={<ProtectedRoute><DashboardLayout><ComingSoon title="Fichiers personnels" /></DashboardLayout></ProtectedRoute>} />
-          <Route path="/learn/reports" element={<ProtectedRoute><DashboardLayout><ComingSoon title="Rapports" /></DashboardLayout></ProtectedRoute>} />
-          <Route path="/learn/preferences" element={<ProtectedRoute><DashboardLayout><ComingSoon title="Préférences" /></DashboardLayout></ProtectedRoute>} />
+          {/* Menu utilisateur — pages transverses (tous rôles authentifiés), rendues dans la coquille du rôle */}
+          {([
+            ['/learn/profile', <ProfilePage />],
+            ['/learn/notifications', <NotificationsPage />],
+            ['/learn/files', <PersonalFiles />],
+            ['/learn/reports', <ReportsPage />],
+            ['/learn/faq', <FaqPage />],
+          ] as [string, JSX.Element][]).map(([path, el]) => (
+            <Route key={path} path={path} element={<ProtectedRoute><RoleShell>{el}</RoleShell></ProtectedRoute>} />
+          ))}
+          <Route path="/learn/preferences" element={<Navigate to="/learn/profile" replace />} />
+          <Route path="/learn/notes" element={<Navigate to="/learn/reports" replace />} />
           <Route path="/learn/session/:id" element={<ProtectedRoute><SessionRoom /></ProtectedRoute>} />
 
           {/* Restricted Access */}
