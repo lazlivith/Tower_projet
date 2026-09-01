@@ -10,10 +10,8 @@ node_modules/
 dist/
 build/
 
-# Fichiers générés par l'app
-backend/uploads/pdfs/
-backend/uploads/images/
-backend/uploads/documents/
+# Fichiers générés par l'app (fallback disque local — Cloudinary en prod)
+backend/uploads/
 backend/generated/
 
 # Logs / divers

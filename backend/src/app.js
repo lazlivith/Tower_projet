@@ -110,8 +110,9 @@ app.use('/api/student', studentRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Fichiers statiques (uploads)
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+// Fichiers statiques (uploads) — fallback disque local quand Cloudinary n'est pas configuré.
+// Aligné sur storage.service.js qui écrit dans `<cwd>/uploads/<type>`.
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
 // Endpoint de test / santé
 app.get('/api/health', (req, res) => {

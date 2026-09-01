@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit, Trash2, Save, Loader2, UploadCloud, Eye, EyeOff } from 'lucide-react';
-import api, { toAbsoluteUrl } from '../../services/api';
+import api from '../../services/api';
+import { uploadFile } from '../../services/upload';
 import {
   PageHeader, Btn, Chip, Field, Input, Select, Textarea, Modal,
   EmptyState, Tabs, ToastHost, type Toast,
@@ -76,10 +77,7 @@ export default function ProjectsManager() {
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await api.post('/upload/image', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const url = toAbsoluteUrl(res.data?.url);
+      const { url } = await uploadFile(file, 'image');
       if (url) setForm((f) => ({ ...f, imageUrl: url }));
     } catch {
       flash('err', "Échec de l'upload de l'image.");

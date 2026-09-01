@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Loader2, FileText, Layers, Eye, EyeOff, UploadCloud, Save } from 'lucide-react';
-import api, { toAbsoluteUrl } from '../../services/api';
+import api from '../../services/api';
+import { uploadFile } from '../../services/upload';
 import {
   PageHeader, Panel, PanelTitle, Btn, Chip, Field, Input, Select, Textarea,
   Modal, EmptyState, ToastHost, type Toast,
@@ -83,10 +84,7 @@ export default function CoursesManager() {
   const upload = async (file: File, apply: (url: string) => void) => {
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      const res = await api.post('/upload/image', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      const url = toAbsoluteUrl(res.data?.url);
+      const { url } = await uploadFile(file, 'image');
       if (url) apply(url);
     } catch {
       flash('err', "Échec de l'upload de l'image.");

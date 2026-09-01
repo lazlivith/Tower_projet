@@ -1,21 +1,17 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import fs from 'fs';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-
-const PDF_DIR = path.resolve('uploads/pdfs');
-
-// Créer le dossier si inexistant
-if (!fs.existsSync(PDF_DIR)) fs.mkdirSync(PDF_DIR, { recursive: true });
+import { storeFile } from './storage.service.js';
 
 /**
- * Sauvegarde le buffer PDF sur disque et retourne l'URL publique
+ * Sauvegarde le buffer PDF (Cloudinary si configuré, sinon disque) et retourne
+ * l'URL publique exploitable telle quelle.
  */
-const savePdf = (pdfBytes, prefix) => {
-  const filename = `${prefix}-${uuidv4()}.pdf`;
-  const filePath = path.join(PDF_DIR, filename);
-  fs.writeFileSync(filePath, pdfBytes);
-  return `/uploads/pdfs/${filename}`;
+const savePdf = async (pdfBytes, prefix) => {
+  const asset = await storeFile({
+    buffer: Buffer.from(pdfBytes),
+    originalname: `${prefix}.pdf`,
+    kind: 'pdf',
+  });
+  return asset.url;
 };
 
 /**
@@ -40,7 +36,7 @@ export const generateInvoicePDF = async (paymentData, studentInfo, courseInfo) =
     page.drawText('Merci pour votre confiance - TowerStructure', { x: 50, y: 50, size: 10, font: timesRomanFont, color: rgb(0.5, 0.5, 0.5) });
 
     const pdfBytes = await pdfDoc.save();
-    return savePdf(pdfBytes, 'facture');
+    return await savePdf(pdfBytes, 'facture');
   } catch (error) {
     console.error("Erreur génération facture:", error);
     throw error;
@@ -83,7 +79,7 @@ export const generateCertificatePDF = async (studentInfo, courseInfo, score, hou
     center('Tower Structure — E-Learning', 70, 11, helveticaFont, rgb(0.5, 0.5, 0.5));
 
     const pdfBytes = await pdfDoc.save();
-    return savePdf(pdfBytes, 'certificat');
+    return await savePdf(pdfBytes, 'certificat');
   } catch (error) {
     console.error("Erreur génération certificat:", error);
     throw error;

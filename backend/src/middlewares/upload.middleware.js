@@ -1,62 +1,53 @@
 import multer from 'multer';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs';
-
-// Créer les dossiers si inexistants
-const ensureDir = (dir) => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-};
-
-ensureDir('uploads/images');
-ensureDir('uploads/documents');
-ensureDir('uploads/pdfs');
 
 /**
- * Crée un storage multer pour un sous-dossier donné
+ * Uploads en mémoire (Buffer) — le fichier est ensuite poussé vers Cloudinary
+ * (ou écrit sur disque en fallback) par `storage.service.js`. Aucune écriture
+ * disque intermédiaire.
  */
-const createStorage = (folder) => multer.diskStorage({
-  destination: (req, file, cb) => cb(null, `uploads/${folder}`),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  }
-});
 
-/**
- * Upload d'image (max 5 MB)
- */
+const memory = multer.memoryStorage();
+
+/** Image (max 5 MB) */
 export const uploadImage = multer({
-  storage: createStorage('images'),
+  storage: memory,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith('image/')) {
       return cb(new Error('Seuls les fichiers image sont acceptés.'));
     }
     cb(null, true);
-  }
+  },
 }).single('file');
 
-/**
- * Upload de document PDF (max 20 MB)
- */
+/** Document PDF (max 25 MB) */
 export const uploadDocument = multer({
-  storage: createStorage('documents'),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  storage: memory,
+  limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype !== 'application/pdf') {
-      return cb(new Error('Seuls les fichiers PDF sont acceptés.'));
+    const ok = file.mimetype === 'application/pdf' || /\.pdf$/i.test(file.originalname);
+    if (!ok) return cb(new Error('Seuls les fichiers PDF sont acceptés.'));
+    cb(null, true);
+  },
+}).single('file');
+
+/** Vidéo de cours (max 300 MB) */
+export const uploadVideo = multer({
+  storage: memory,
+  limits: { fileSize: 300 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('video/')) {
+      return cb(new Error('Seuls les fichiers vidéo sont acceptés.'));
     }
     cb(null, true);
-  }
+  },
 }).single('file');
 
 /**
- * Upload d'un fichier tableur (.xlsx / .xls) en mémoire — parsé puis jeté (pas de persistance disque).
- * Utilisé pour l'import de Quiz par l'instructeur.
+ * Fichier tableur (.xlsx / .xls) en mémoire — parsé puis jeté (import de Quiz).
  */
 export const uploadSpreadsheet = multer({
-  storage: multer.memoryStorage(),
+  storage: memory,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ok = [
@@ -68,8 +59,3 @@ export const uploadSpreadsheet = multer({
     cb(null, true);
   },
 }).single('file');
-
-/**
- * Stockage interne pour les PDFs générés (factures, certificats)
- */
-export const pdfStorage = createStorage('pdfs');
