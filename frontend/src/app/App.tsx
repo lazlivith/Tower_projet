@@ -6,7 +6,7 @@ import ErrorBoundary from './components/shared/ErrorBoundary';
 
 const queryClient = new QueryClient();
 import PublicLayout from './components/vitrine/PublicLayout';
-import DashboardLayout from './components/learn/DashboardLayout';
+import StudentLayout from './components/student/StudentLayout';
 import ProtectedRoute from './components/learn/ProtectedRoute';
 
 // Public Pages
@@ -45,7 +45,6 @@ import StudentCalendar from './pages/student/StudentCalendar';
 import StudentClassBoard from './pages/student/StudentClassBoard';
 import StudentQuizzes from './pages/student/StudentQuizzes';
 import StudentCertificates from './pages/student/StudentCertificates';
-import StudentNotifications from './pages/student/StudentNotifications';
 
 // Instructor Pages
 import InstructorLayout from './components/instructor/InstructorLayout';
@@ -145,87 +144,27 @@ export default function App() {
           <Route path="/payment/success" element={<ProtectedRoute><PaymentResult status="success" /></ProtectedRoute>} />
           <Route path="/payment/cancel" element={<ProtectedRoute><PaymentResult status="cancel" /></ProtectedRoute>} />
 
-          {/* Student Routes with Dashboard Layout */}
-          <Route
-            path="/learn/student"
-            element={
-              <ProtectedRoute requiredRole="STUDENT" requireAccess>
-                <DashboardLayout>
-                  <StudentDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/student/courses"
-            element={
-              <ProtectedRoute requiredRole="STUDENT" requireAccess>
-                <DashboardLayout>
-                  <StudentDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/student/course/:courseId"
-            element={
-              <ProtectedRoute requiredRole="STUDENT" requireAccess>
-                <DashboardLayout>
-                  <CourseDetail />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/student/calendar"
-            element={
-              <ProtectedRoute requiredRole="STUDENT" requireAccess>
-                <DashboardLayout>
-                  <StudentCalendar />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/student/certificates"
-            element={
-              <ProtectedRoute requiredRole="STUDENT" requireAccess>
-                <DashboardLayout>
-                  <StudentCertificates />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/student/board"
-            element={
-              <ProtectedRoute requiredRole="STUDENT" requireAccess>
-                <DashboardLayout>
-                  <StudentClassBoard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/student/quizzes"
-            element={
-              <ProtectedRoute requiredRole="STUDENT" requireAccess>
-                <DashboardLayout>
-                  <StudentQuizzes />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/student/notifications"
-            element={
-              <ProtectedRoute requiredRole="STUDENT" requireAccess>
-                <DashboardLayout>
-                  <StudentNotifications />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+          {/* Student Routes — espace apprenant « ingénierie sombre » */}
+          {([
+            ['/learn/student', <StudentDashboard />],
+            ['/learn/student/courses', <StudentDashboard />],
+            ['/learn/student/course/:courseId', <CourseDetail />],
+            ['/learn/student/calendar', <StudentCalendar />],
+            ['/learn/student/certificates', <StudentCertificates />],
+            ['/learn/student/board', <StudentClassBoard />],
+            ['/learn/student/quizzes', <StudentQuizzes />],
+          ] as [string, JSX.Element][]).map(([path, el]) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <ProtectedRoute requiredRole="STUDENT" requireAccess>
+                  <StudentLayout>{el}</StudentLayout>
+                </ProtectedRoute>
+              }
+            />
+          ))}
+          <Route path="/learn/student/notifications" element={<Navigate to="/learn/notifications" replace />} />
 
           {/* Instructor Routes — espace formateur « ingénierie sombre » */}
           {([

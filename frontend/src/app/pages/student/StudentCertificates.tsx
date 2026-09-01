@@ -1,22 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Award, Download, Loader2, Clock, HelpCircle } from 'lucide-react';
-import api from '../../services/api';
+import { Award, Download, Clock, HelpCircle } from 'lucide-react';
+import api, { toAbsoluteUrl } from '../../services/api';
+import { PageHeader, Panel, PanelTitle, EmptyState } from '../../components/admin/ui';
 
-interface Certificate {
-  id: string;
-  courseTitle: string;
-  score: number;
-  issuedAt: string;
-  downloadUrl: string;
-}
+interface Certificate { id: string; courseTitle: string; score: number; issuedAt: string; downloadUrl: string }
 interface Pending {
-  courseTitle: string;
-  hoursSpent: number;
-  hoursRequired: number;
-  hoursOk: boolean;
-  quizzesOk: boolean;
-  quizzesPassed: number;
-  quizzesTotal: number;
+  courseTitle: string; hoursSpent: number; hoursRequired: number;
+  hoursOk: boolean; quizzesOk: boolean; quizzesPassed: number; quizzesTotal: number;
 }
 
 export default function StudentCertificates() {
@@ -34,94 +24,85 @@ export default function StudentCertificates() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return <div className="p-8 flex items-center gap-2 text-gray-500"><Loader2 className="w-5 h-5 animate-spin" /> Chargement…</div>;
-  }
-
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-[#1A1A2E] mb-1">Mes Certificats</h2>
-        <p className="text-gray-500 text-sm">
-          Délivrés automatiquement dès {pending[0]?.hoursRequired ?? 85} h de présence et tous les quiz validés.
-        </p>
-      </div>
+    <div className="mx-auto max-w-[1100px]">
+      <PageHeader
+        eyebrow="Apprenant"
+        title="Mes certificats"
+        description={`Délivrés automatiquement dès ${pending[0]?.hoursRequired ?? 85} h de présence et tous les quiz validés.`}
+      />
 
-      {certificates.length === 0 && pending.length === 0 && (
-        <p className="text-gray-400">Aucune formation en cours.</p>
-      )}
-
-      {certificates.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-          {certificates.map((cert) => (
-            <div key={cert.id} className="bg-white rounded-2xl shadow-sm border-2 border-[#FFC107] overflow-hidden">
-              <div className="bg-gradient-to-r from-[#1A1A2E] to-[#16213E] text-white p-6 text-center">
-                <Award className="w-14 h-14 mx-auto mb-3 text-[#FFC107]" />
-                <h3 className="text-white font-bold">Certificat de Réussite</h3>
-                <div className="text-xs opacity-70">Tower Structure E-Learning</div>
-              </div>
-              <div className="p-6">
-                <p className="text-center font-bold text-lg text-gray-900 mb-4">{cert.courseTitle}</p>
-                <div className="grid grid-cols-2 gap-4 text-center text-sm mb-6">
-                  <div>
-                    <div className="text-gray-500">Obtenu le</div>
-                    <div className="font-semibold">{new Date(cert.issuedAt).toLocaleDateString('fr-FR')}</div>
+      {loading ? (
+        <div className="text-[13px] text-[color:var(--a-ink-dim)]">Chargement…</div>
+      ) : certificates.length === 0 && pending.length === 0 ? (
+        <EmptyState>Aucune formation en cours.</EmptyState>
+      ) : (
+        <>
+          {certificates.length > 0 && (
+            <div className="mb-6 grid gap-4 md:grid-cols-2">
+              {certificates.map((c) => (
+                <div key={c.id} className="a-card overflow-hidden !border-[color:color-mix(in_srgb,var(--a-accent-2)_45%,transparent)]">
+                  <div className="bg-[color:var(--a-panel-2)] p-6 text-center">
+                    <Award className="mx-auto mb-3 h-14 w-14 text-[color:var(--a-accent-2)]" />
+                    <div className="font-[family-name:var(--font-display,inherit)] font-semibold text-[color:var(--a-ink)]">Certificat de réussite</div>
+                    <div className="text-[11px] text-[color:var(--a-ink-dim)]">Tower Structure</div>
                   </div>
-                  <div>
-                    <div className="text-gray-500">Score</div>
-                    <div className="font-semibold text-[#FFB300]">{cert.score}%</div>
+                  <div className="p-5">
+                    <p className="text-center text-[15px] font-semibold text-[color:var(--a-ink)]">{c.courseTitle}</p>
+                    <div className="my-4 grid grid-cols-2 gap-3 text-center text-[12px]">
+                      <div>
+                        <div className="text-[color:var(--a-ink-dim)]">Obtenu le</div>
+                        <div className="font-semibold text-[color:var(--a-ink-soft)]">{new Date(c.issuedAt).toLocaleDateString('fr-FR')}</div>
+                      </div>
+                      <div>
+                        <div className="text-[color:var(--a-ink-dim)]">Score</div>
+                        <div className="font-semibold text-[color:var(--a-accent-2)]">{c.score}%</div>
+                      </div>
+                    </div>
+                    <a
+                      href={toAbsoluteUrl(c.downloadUrl)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="a-btn a-btn-primary w-full justify-center"
+                    >
+                      <Download className="h-4 w-4" /> Télécharger le PDF
+                    </a>
                   </div>
                 </div>
-                <a
-                  href={cert.downloadUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#FFC107] px-4 py-2.5 font-bold text-[#1A1A2E] hover:bg-yellow-400"
-                >
-                  <Download className="w-4 h-4" /> Télécharger le PDF
-                </a>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
 
-      {pending.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h3 className="font-bold text-gray-800 mb-4">En cours d'obtention</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pending.map((p, i) => {
-              const hoursPct = Math.min(100, Math.round((p.hoursSpent / p.hoursRequired) * 100));
-              return (
-                <div key={i} className="border border-gray-200 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Award className="w-6 h-6 text-gray-300" />
-                    <h4 className="text-sm font-semibold text-gray-800">{p.courseTitle}</h4>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div>
-                      <div className="flex justify-between text-gray-500 mb-1">
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Présence</span>
-                        <span className={p.hoursOk ? 'text-green-600 font-semibold' : ''}>
-                          {p.hoursSpent} / {p.hoursRequired} h
-                        </span>
+          {pending.length > 0 && (
+            <Panel>
+              <PanelTitle>En cours d'obtention</PanelTitle>
+              <div className="grid gap-3 md:grid-cols-2">
+                {pending.map((p, i) => {
+                  const pct = Math.min(100, Math.round((p.hoursSpent / p.hoursRequired) * 100));
+                  return (
+                    <div key={i} className="a-card p-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <Award className="h-5 w-5 text-[color:var(--a-ink-dim)]" />
+                        <h4 className="text-[13px] font-semibold text-[color:var(--a-ink)]">{p.courseTitle}</h4>
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-gray-200">
-                        <div className="h-1.5 rounded-full bg-[#FFB300]" style={{ width: `${hoursPct}%` }} />
+                      <div className="mb-1 flex justify-between text-[11px] text-[color:var(--a-ink-dim)]">
+                        <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> Présence</span>
+                        <span className={p.hoursOk ? 'font-semibold text-[color:var(--a-ok)]' : ''}>{Math.round(p.hoursSpent)} / {p.hoursRequired} h</span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                        <div className="h-full rounded-full bg-[color:var(--a-accent-2)]" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="mt-2 flex justify-between text-[11px] text-[color:var(--a-ink-dim)]">
+                        <span className="inline-flex items-center gap-1"><HelpCircle className="h-3 w-3" /> Quiz validés</span>
+                        <span className={p.quizzesOk ? 'font-semibold text-[color:var(--a-ok)]' : ''}>{p.quizzesPassed} / {p.quizzesTotal}</span>
                       </div>
                     </div>
-                    <div className="flex justify-between text-gray-500">
-                      <span className="flex items-center gap-1"><HelpCircle className="w-3 h-3" /> Quiz validés</span>
-                      <span className={p.quizzesOk ? 'text-green-600 font-semibold' : ''}>
-                        {p.quizzesPassed} / {p.quizzesTotal}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                  );
+                })}
+              </div>
+            </Panel>
+          )}
+        </>
       )}
     </div>
   );

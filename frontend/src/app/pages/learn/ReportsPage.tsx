@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FileBarChart, FileText, CheckCircle2, Clock } from 'lucide-react';
+import { FileText, CheckCircle2, Clock } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { PageHeader, Panel, Chip, EmptyState } from '../../components/admin/ui';
 
 interface Report {
   id: string; assignment: string; course: string; fileUrl: string | null;
@@ -24,52 +25,45 @@ export default function ReportsPage() {
   }, [user?.role]);
 
   return (
-    <div className="mx-auto max-w-3xl p-6 sm:p-8">
-      <div className="mb-6 flex items-center gap-2.5">
-        <FileBarChart className="h-6 w-6 text-[#FFC107]" />
-        <h1 className="text-2xl font-bold text-[#1A1A2E]">Rapports</h1>
-      </div>
+    <div className="mx-auto max-w-3xl">
+      <PageHeader
+        eyebrow={user?.role === 'STUDENT' ? 'Apprenant' : 'Espace'}
+        title="Rapports"
+        description="Vos travaux et projets rendus, avec note et statut de correction."
+      />
 
       {user?.role !== 'STUDENT' ? (
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-600">
+        <Panel className="text-[13px] text-[color:var(--a-ink-soft)]">
           Suivi des travaux rendus par les élèves.
           {user?.role === 'INSTRUCTOR' && (
-            <> Corrigez-les depuis <Link to="/learn/instructor/assignments" className="font-semibold text-[#1A1A2E] underline">Devoirs</Link>.</>
+            <> Corrigez-les depuis <Link to="/learn/instructor/assignments" className="a-link">Devoirs</Link>.</>
           )}
-        </div>
+        </Panel>
       ) : loading ? (
-        <div className="text-sm text-gray-400">Chargement…</div>
+        <div className="text-[13px] text-[color:var(--a-ink-dim)]">Chargement…</div>
       ) : err ? (
-        <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{err}</div>
+        <EmptyState>{err}</EmptyState>
       ) : rows.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center text-gray-400">
-          Aucun travail rendu pour l'instant. Vos remises de devoirs et projets apparaîtront ici avec leur note.
-        </div>
+        <EmptyState>Aucun travail rendu pour l'instant.</EmptyState>
       ) : (
         <div className="flex flex-col gap-2.5">
           {rows.map((r) => (
-            <div key={r.id} className="rounded-xl border border-gray-200 bg-white p-4">
+            <Panel key={r.id} className="!p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="font-semibold text-gray-900">{r.assignment}</div>
-                {r.status === 'GRADED' ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Corrigé — {r.grade}/100
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-700">
-                    <Clock className="h-3.5 w-3.5" /> En attente de correction
-                  </span>
-                )}
+                <div className="font-semibold text-[color:var(--a-ink)]">{r.assignment}</div>
+                {r.status === 'GRADED'
+                  ? <Chip tone="green"><CheckCircle2 className="h-3.5 w-3.5" /> Corrigé — {r.grade}/100</Chip>
+                  : <Chip tone="amber"><Clock className="h-3.5 w-3.5" /> En attente</Chip>}
               </div>
-              <div className="mt-1 text-xs text-gray-400">
+              <div className="mt-1 text-[11px] text-[color:var(--a-ink-dim)]">
                 {r.course} · rendu le {new Date(r.submittedAt).toLocaleDateString('fr-FR')}
               </div>
               {r.fileUrl && (
-                <a href={toAbsoluteUrl(r.fileUrl)} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#1A1A2E] hover:underline">
+                <a href={toAbsoluteUrl(r.fileUrl)} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-[color:var(--a-accent)]">
                   <FileText className="h-3.5 w-3.5" /> Voir ma remise
                 </a>
               )}
-            </div>
+            </Panel>
           ))}
         </div>
       )}

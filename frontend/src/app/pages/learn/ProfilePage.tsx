@@ -1,53 +1,48 @@
 import { Link } from 'react-router-dom';
 import { User, Mail, ShieldCheck, KeyRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { PageHeader, Panel } from '../../components/admin/ui';
 
 const roleLabel: Record<string, string> = {
-  MANAGER: 'Manager / SuperAdmin',
-  INSTRUCTOR: 'Instructeur',
-  STUDENT: 'Étudiant',
+  MANAGER: 'Administrateur',
+  INSTRUCTOR: 'Formateur',
+  STUDENT: 'Apprenant',
 };
 
 export default function ProfilePage() {
   const { user } = useAuth();
 
   return (
-    <div className="p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-[#1A1A2E] mb-6">Mon profil</h1>
+    <div className="mx-auto max-w-2xl">
+      <PageHeader eyebrow="Compte" title="Mon profil" />
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+      <Panel>
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-[#1A1A2E] text-[#FFC107] flex items-center justify-center text-xl font-bold">
+          <div className="grid h-14 w-14 place-items-center rounded-full border border-[color:var(--a-line)] text-xl font-bold text-[color:var(--a-accent)]">
             {user?.nom?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div>
-            <div className="font-semibold text-gray-900">{user?.nom}</div>
-            <div className="text-sm text-gray-500">{user?.role ? roleLabel[user.role] ?? user.role : ''}</div>
+            <div className="font-semibold text-[color:var(--a-ink)]">{user?.nom}</div>
+            <div className="text-[13px] text-[color:var(--a-ink-dim)]">{user?.role ? roleLabel[user.role] ?? user.role : ''}</div>
           </div>
         </div>
 
-        <div className="grid gap-3 text-sm">
-          <div className="flex items-center gap-3 text-gray-700">
-            <User className="w-4 h-4 text-gray-400" /> {user?.nom}
-          </div>
-          <div className="flex items-center gap-3 text-gray-700">
-            <Mail className="w-4 h-4 text-gray-400" /> {user?.email}
-          </div>
-          <div className="flex items-center gap-3 text-gray-700">
-            <ShieldCheck className="w-4 h-4 text-gray-400" /> Compte {user?.isActive === false ? 'suspendu' : 'actif'}
-          </div>
+        <div className="mt-5 flex flex-col gap-2.5 text-[13px] text-[color:var(--a-ink-soft)]">
+          <div className="flex items-center gap-3"><User className="h-4 w-4 text-[color:var(--a-ink-dim)]" /> {user?.nom}</div>
+          <div className="flex items-center gap-3"><Mail className="h-4 w-4 text-[color:var(--a-ink-dim)]" /> {user?.email}</div>
+          <div className="flex items-center gap-3"><ShieldCheck className="h-4 w-4 text-[color:var(--a-ink-dim)]" /> Compte {user?.isActive === false ? 'suspendu' : 'actif'}</div>
         </div>
 
-        <div className="pt-4 border-t border-gray-100">
+        <div className="mt-5 border-t border-[color:var(--a-line)] pt-4">
           <Link
             to="/learn/first-login"
             state={{ email: user?.email }}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[#1A1A2E] hover:text-[#FFB300] transition-colors"
+            className="inline-flex items-center gap-2 text-[13px] font-semibold text-[color:var(--a-accent)] hover:underline"
           >
-            <KeyRound className="w-4 h-4" /> Changer mon mot de passe
+            <KeyRound className="h-4 w-4" /> Changer mon mot de passe
           </Link>
         </div>
-      </div>
+      </Panel>
     </div>
   );
 }

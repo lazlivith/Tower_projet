@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronDown, ChevronUp, Lock, CheckCircle, Play, FileText, HelpCircle } from 'lucide-react';
-import api from '../../services/api';
+import api, { toAbsoluteUrl } from '../../services/api';
 import VideoPlayer from '../../components/learn/VideoPlayer';
 import QuizRunner from '../../components/learn/QuizRunner';
 import { parseLessonTitle } from '../../utils/parseLessonTitle';
+import { Panel, Btn, EmptyState } from '../../components/admin/ui';
 
 export default function CourseDetail() {
   const { courseId } = useParams();
@@ -17,8 +18,7 @@ export default function CourseDetail() {
   const fetchData = useCallback(async () => {
     try {
       const res = await api.get('/student/dashboard');
-      const current = res.data.find((e: any) => e.course.id === courseId);
-      setCourseData(current || null);
+      setCourseData(res.data.find((e: any) => e.course.id === courseId) || null);
     } catch (err) {
       console.error(err);
     } finally {
@@ -28,14 +28,13 @@ export default function CourseDetail() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-xl">Chargement…</div>;
-
+  if (loading) return <div className="text-[13px] text-[color:var(--a-ink-dim)]">Chargement…</div>;
   if (!courseData) {
     return (
-      <div className="p-8 text-center">
-        <h2 className="mb-4">Cours introuvable ou non inscrit</h2>
-        <Link to="/learn/student" className="text-[#FFC107] hover:underline">Retour au tableau de bord</Link>
-      </div>
+      <EmptyState>
+        Cours introuvable ou vous n'y êtes pas inscrit.
+        <div className="mt-3"><Btn variant="ghost" onClick={() => navigate('/learn/student')}>Retour au tableau de bord</Btn></div>
+      </EmptyState>
     );
   }
 
@@ -56,118 +55,110 @@ export default function CourseDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] pb-16">
-      {/* Banner */}
-      <div className="bg-[#A8E6CF] px-6 py-10 lg:px-12 mx-4 mt-4 rounded-[2rem] shadow-sm">
-        <button onClick={() => navigate('/learn/student')} className="w-10 h-10 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm hover:scale-105 transition-transform">
-          <ChevronLeft className="w-5 h-5 text-gray-700" />
+    <div className="mx-auto max-w-[1000px]">
+      <Panel className="mb-6">
+        <button
+          onClick={() => navigate('/learn/student')}
+          className="mb-4 grid h-9 w-9 place-items-center rounded-full border border-[color:var(--a-line)] text-[color:var(--a-ink-soft)] transition-colors hover:border-[color:var(--a-accent)] hover:text-[color:var(--a-accent)]"
+        >
+          <ChevronLeft className="h-4 w-4" />
         </button>
-        <h1 className="text-3xl lg:text-4xl font-extrabold mb-3 text-[#1A1A1A]">{course.title}</h1>
-        <p className="text-[#1A1A1A]/80 mb-6 max-w-2xl font-medium leading-relaxed">{course.description}</p>
-        <div className="max-w-md">
-          <div className="flex justify-between text-xs font-bold mb-2 text-[#1A1A1A]">
-            <span>Progrès</span><span>{progressRate}%</span>
+        <h1 className="text-[1.5rem] text-[color:var(--a-ink)]">{course.title}</h1>
+        <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed text-[color:var(--a-ink-soft)]">{course.description}</p>
+        <div className="mt-4 max-w-md">
+          <div className="mb-1.5 flex justify-between text-[12px] font-semibold text-[color:var(--a-ink-soft)]">
+            <span>Progression</span><span>{progressRate}%</span>
           </div>
-          <div className="w-full bg-[#1A1A1A]/10 rounded-full h-2">
-            <div className="bg-[#1A1A1A] h-2 rounded-full transition-all duration-500" style={{ width: `${progressRate}%` }} />
+          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-[color:var(--a-accent)] transition-all duration-500" style={{ width: `${progressRate}%` }} />
           </div>
         </div>
+      </Panel>
+
+      <div className="mb-4 flex items-end justify-between">
+        <h2 className="text-[1.1rem] text-[color:var(--a-ink)]">Contenu du cours</h2>
+        <span className="text-[12px] text-[color:var(--a-ink-dim)]">{lessons.length} chapitre(s)</span>
       </div>
 
-      <div className="mx-auto max-w-4xl px-6 lg:px-12 mt-10">
-        <div className="flex justify-between items-end mb-6">
-          <h2 className="text-2xl font-bold text-[#1A1A1A]">Contenu du cours</h2>
-          <span className="text-sm text-gray-500 font-medium">{lessons.length} chapitres</span>
-        </div>
+      <div className="flex flex-col gap-2.5">
+        {lessons.map((lesson, index) => {
+          const locked = !!lesson.locked;
+          const parsed = parseLessonTitle(lesson.title);
+          const isOpen = expanded === lesson.id;
+          const hasVideo = lesson.videoProvider && lesson.videoProvider !== 'none';
+          const canManualComplete = !locked && !lesson.isCompleted && !hasVideo && !lesson.hasQuiz;
 
-        <div className="space-y-4">
-          {lessons.map((lesson, index) => {
-            const locked = !!lesson.locked;
-            const parsed = parseLessonTitle(lesson.title);
-            const isOpen = expanded === lesson.id;
-            const hasVideo = lesson.videoProvider && lesson.videoProvider !== 'none';
-            const canManualComplete = !locked && !lesson.isCompleted && !hasVideo && !lesson.hasQuiz;
-
-            return (
-              <div key={lesson.id} className={`bg-white border rounded-2xl shadow-sm transition-all ${locked ? 'border-gray-100 opacity-90' : 'border-gray-200'}`}>
-                <button
-                  type="button"
-                  disabled={locked}
-                  onClick={() => setExpanded(isOpen ? null : lesson.id)}
-                  className="w-full flex items-center justify-between gap-4 p-5 text-left disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${lesson.isCompleted ? 'bg-green-100 text-green-700' : 'bg-gray-50 text-gray-600'}`}>
-                      {lesson.isCompleted ? <CheckCircle className="w-5 h-5" /> : (parsed.number ?? index + 1)}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className={`font-bold text-[15px] truncate ${locked ? 'text-gray-400' : 'text-gray-900'}`}>{parsed.title}</h3>
-                      <p className="text-xs font-medium text-gray-400 flex items-center gap-2 mt-0.5">
-                        {hasVideo && <span className="inline-flex items-center gap-1"><Play className="w-3 h-3" /> Vidéo</span>}
-                        {lesson.hasQuiz && <span className="inline-flex items-center gap-1"><HelpCircle className="w-3 h-3" /> Quiz</span>}
-                        {lesson.documentUrl && <span className="inline-flex items-center gap-1"><FileText className="w-3 h-3" /> Document</span>}
-                        {!hasVideo && !lesson.hasQuiz && !lesson.documentUrl && 'Lecture'}
-                      </p>
+          return (
+            <div key={lesson.id} className={`a-card ${locked ? 'opacity-70' : ''}`}>
+              <button
+                type="button"
+                disabled={locked}
+                onClick={() => setExpanded(isOpen ? null : lesson.id)}
+                className="flex w-full items-center justify-between gap-4 p-4 text-left disabled:cursor-not-allowed"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className={`grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg text-[13px] font-bold ${
+                    lesson.isCompleted ? 'bg-[color:color-mix(in_srgb,var(--a-ok)_18%,transparent)] text-[color:var(--a-ok)]' : 'bg-white/5 text-[color:var(--a-ink-soft)]'
+                  }`}>
+                    {lesson.isCompleted ? <CheckCircle className="h-4 w-4" /> : (parsed.number ?? index + 1)}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className={`truncate text-[14px] font-semibold ${locked ? 'text-[color:var(--a-ink-dim)]' : 'text-[color:var(--a-ink)]'}`}>{parsed.title}</h3>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[color:var(--a-ink-dim)]">
+                      {hasVideo && <span className="inline-flex items-center gap-1"><Play className="h-3 w-3" /> Vidéo</span>}
+                      {lesson.hasQuiz && <span className="inline-flex items-center gap-1"><HelpCircle className="h-3 w-3" /> Quiz</span>}
+                      {lesson.documentUrl && <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" /> Document</span>}
+                      {!hasVideo && !lesson.hasQuiz && !lesson.documentUrl && 'Lecture'}
                     </div>
                   </div>
-                  <div className="shrink-0">
-                    {locked
-                      ? <Lock className="w-4 h-4 text-gray-400" />
-                      : isOpen ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-                  </div>
-                </button>
+                </div>
+                <div className="flex-shrink-0 text-[color:var(--a-ink-dim)]">
+                  {locked ? <Lock className="h-4 w-4" /> : isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
+              </button>
 
-                {locked && (
-                  <p className="px-5 pb-4 -mt-1 text-xs text-amber-700 bg-amber-50/60 rounded-b-2xl py-2">
-                    {lesson.lockReason || "Non disponible à moins que l'activité précédente soit marquée comme achevée"}
-                  </p>
-                )}
+              {locked && (
+                <p className="border-t border-[color:var(--a-line-soft)] px-4 py-2 text-[11px] text-[color:var(--a-accent-2)]">
+                  {lesson.lockReason || "Non disponible tant que l'activité précédente n'est pas achevée."}
+                </p>
+              )}
 
-                {!locked && isOpen && (
-                  <div className="px-5 pb-6 space-y-5 border-t border-gray-100 pt-5">
-                    {hasVideo && (
-                      <VideoPlayer
-                        lessonId={lesson.id}
-                        provider={lesson.videoProvider}
-                        embedUrl={lesson.videoEmbedUrl}
-                        onCompleted={fetchData}
-                      />
-                    )}
+              {!locked && isOpen && (
+                <div className="flex flex-col gap-5 border-t border-[color:var(--a-line-soft)] px-4 pb-6 pt-5">
+                  {hasVideo && (
+                    <VideoPlayer
+                      lessonId={lesson.id}
+                      provider={lesson.videoProvider}
+                      embedUrl={lesson.videoEmbedUrl}
+                      onCompleted={fetchData}
+                    />
+                  )}
 
-                    {lesson.documentUrl && (
-                      <a
-                        href={lesson.documentUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200"
-                      >
-                        <FileText className="w-4 h-4" /> Ouvrir le document
-                      </a>
-                    )}
+                  {lesson.documentUrl && (
+                    <a href={toAbsoluteUrl(lesson.documentUrl)} target="_blank" rel="noreferrer" className="a-btn a-btn-ghost self-start">
+                      <FileText className="h-4 w-4" /> Ouvrir le document
+                    </a>
+                  )}
 
-                    {lesson.hasQuiz && <QuizRunner lessonId={lesson.id} onPassed={fetchData} />}
+                  {lesson.hasQuiz && <QuizRunner lessonId={lesson.id} onPassed={fetchData} />}
 
-                    {canManualComplete && (
-                      <button
-                        onClick={() => markComplete(lesson.id, true)}
-                        disabled={toggling}
-                        className="inline-flex items-center gap-2 rounded-lg bg-[#FFC107] px-4 py-2 text-sm font-bold text-[#1A1A2E] hover:bg-yellow-400 disabled:opacity-60"
-                      >
-                        <CheckCircle className="w-4 h-4" /> Marquer ce chapitre comme terminé
-                      </button>
-                    )}
+                  {canManualComplete && (
+                    <Btn variant="primary" onClick={() => markComplete(lesson.id, true)} disabled={toggling} className="self-start">
+                      <CheckCircle className="h-4 w-4" /> Marquer ce chapitre comme terminé
+                    </Btn>
+                  )}
 
-                    {lesson.isCompleted && (
-                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700">
-                        <CheckCircle className="w-4 h-4" /> Chapitre terminé
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  {lesson.isCompleted && (
+                    <p className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[color:var(--a-ok)]">
+                      <CheckCircle className="h-4 w-4" /> Chapitre terminé
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {lessons.length === 0 && <EmptyState>Aucun chapitre publié pour l'instant.</EmptyState>}
       </div>
     </div>
   );
