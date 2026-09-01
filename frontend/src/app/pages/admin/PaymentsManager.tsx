@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle, Clock, User, BookOpen, X, Loader, Ban, Plus } from 'lucide-react';
-import Modal from '../../components/shared/Modal';
+import { CheckCircle, Clock, User, BookOpen, Loader, Ban, Plus, RefreshCw } from 'lucide-react';
 import api from '../../services/api';
+import {
+  PageHeader, Panel, Btn, Field, Select, Modal, EmptyState, Tabs,
+  ToastHost, type Toast,
+} from '../../components/admin/ui';
 
 interface Enrollment {
   id: string;
@@ -20,19 +23,15 @@ export default function PaymentsManager() {
   const [rows, setRows] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
 
-  // Modal "Donner accès"
   const [grantOpen, setGrantOpen] = useState(false);
   const [students, setStudents] = useState<{ id: string; nom: string; email: string }[]>([]);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [grant, setGrant] = useState({ studentId: '', courseId: '', paymentPlan: 'FULL' });
   const [granting, setGranting] = useState(false);
 
-  const flash = (type: 'success' | 'error', msg: string) => {
-    setFeedback({ type, msg });
-    setTimeout(() => setFeedback(null), 4500);
-  };
+  const flash = (kind: Toast['kind'], msg: string) => setToast({ kind, msg });
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -40,7 +39,7 @@ export default function PaymentsManager() {
       const res = await api.get(`/admin/enrollments/pending?status=${tab}`);
       setRows(res.data || []);
     } catch {
-      flash('error', 'Erreur lors du chargement des inscriptions.');
+      flash('err', 'Erreur lors du chargement des inscriptions.');
       setRows([]);
     } finally {
       setLoading(false);
@@ -55,10 +54,10 @@ export default function PaymentsManager() {
     setBusy(e.id);
     try {
       await api.patch(`/admin/enrollments/${e.id}/validate-access`, { status });
-      flash('success', status === 'ACTIVE' ? `Accès de ${e.student.nom} activé.` : `Accès de ${e.student.nom} suspendu.`);
+      flash('ok', status === 'ACTIVE' ? `Accès de ${e.student.nom} activé.` : `Accès de ${e.student.nom} suspendu.`);
       setRows((prev) => prev.filter((r) => r.id !== e.id));
     } catch (err: any) {
-      flash('error', err.response?.data?.message || 'Erreur.');
+      flash('err', err.response?.data?.message || 'Erreur.');
     } finally {
       setBusy(null);
     }
@@ -73,7 +72,7 @@ export default function PaymentsManager() {
       setStudents(all.filter((x: any) => x.role === 'STUDENT'));
       setCourses(c.data?.data ?? c.data ?? []);
     } catch {
-      flash('error', 'Erreur de chargement des listes.');
+      flash('err', 'Erreur de chargement des listes.');
     }
   };
 
@@ -83,148 +82,129 @@ export default function PaymentsManager() {
     setGranting(true);
     try {
       await api.post('/admin/enrollments/assign', grant);
-      flash('success', 'Accès accordé et activé.');
+      flash('ok', 'Accès accordé et activé.');
       setGrantOpen(false);
       if (tab === 'ACTIVE') fetchRows();
     } catch (err: any) {
-      flash('error', err.response?.data?.message || "Erreur lors de l'attribution de l'accès.");
+      flash('err', err.response?.data?.message || "Erreur lors de l'attribution de l'accès.");
     } finally {
       setGranting(false);
     }
   };
 
   return (
-    <div className="p-6">
-      {feedback && (
-        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-white font-medium flex items-center gap-3 max-w-sm ${feedback.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
-          {feedback.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <X className="w-5 h-5" />}
-          <span className="text-sm">{feedback.msg}</span>
-        </div>
-      )}
+    <div className="mx-auto max-w-[1200px]">
+      <PageHeader
+        eyebrow="Communauté"
+        title="Paiements & accès"
+        description="Débloquez l'accès d'un élève après paiement, suspendez un accès, ou accordez un accès manuellement."
+        actions={
+          <>
+            <Btn variant="ghost" onClick={fetchRows}><RefreshCw className="h-4 w-4" /> Actualiser</Btn>
+            <Btn variant="primary" onClick={openGrant}><Plus className="h-4 w-4" /> Donner accès</Btn>
+          </>
+        }
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Paiements & Accès</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {loading ? '…' : `${rows.length} ${tab === 'SUSPENDED' ? 'en attente de paiement/validation' : 'accès actifs'}`}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm">
-            <button onClick={() => setTab('SUSPENDED')} className={`px-4 py-1.5 font-medium ${tab === 'SUSPENDED' ? 'bg-[#1A1A2E] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-              En attente
-            </button>
-            <button onClick={() => setTab('ACTIVE')} className={`px-4 py-1.5 font-medium ${tab === 'ACTIVE' ? 'bg-[#1A1A2E] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-              Accès actifs
-            </button>
-          </div>
-          <button onClick={openGrant} className="px-4 py-2 bg-[#FFC107] text-[#1A1A2E] rounded-xl font-semibold text-sm hover:bg-yellow-400 flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Donner accès
-          </button>
-          <button onClick={fetchRows} className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-50">Actualiser</button>
-        </div>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <Tabs
+          active={tab}
+          onChange={(t) => setTab(t)}
+          tabs={[{ id: 'SUSPENDED' as Tab, label: 'En attente' }, { id: 'ACTIVE' as Tab, label: 'Accès actifs' }]}
+        />
+        <span className="text-[12px] text-[color:var(--a-ink-dim)]">
+          {loading ? '…' : `${rows.length} ${tab === 'SUSPENDED' ? 'en attente' : 'actif(s)'}`}
+        </span>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400 animate-pulse">Chargement…</div>
+        <div className="text-[13px] text-[color:var(--a-ink-dim)]">Chargement…</div>
       ) : rows.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm text-center py-16">
-          <CheckCircle className="w-14 h-14 text-green-400 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-gray-700 mb-2">Rien à afficher</h3>
-          <p className="text-gray-400 text-sm">
-            {tab === 'SUSPENDED' ? 'Aucune inscription en attente.' : 'Aucun accès actif.'}
-          </p>
-        </div>
+        <EmptyState>{tab === 'SUSPENDED' ? 'Aucune inscription en attente de paiement.' : 'Aucun accès actif.'}</EmptyState>
       ) : (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-2.5">
           {rows.map((e) => (
-            <div key={e.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tab === 'SUSPENDED' ? 'bg-amber-100' : 'bg-green-100'}`}>
-                  <User className={`w-6 h-6 ${tab === 'SUSPENDED' ? 'text-amber-600' : 'text-green-600'}`} />
-                </div>
-                <div>
-                  <div className="font-bold text-gray-900">{e.student.nom}</div>
-                  <div className="text-sm text-gray-500">{e.student.email}</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-gray-600">
-                <BookOpen className="w-5 h-5 text-blue-500" />
-                <div>
-                  <div className="font-semibold text-sm text-gray-800">{e.course.title}</div>
-                  <div className="text-xs text-gray-400">
-                    {e.course.price?.toLocaleString()} DH · {e.paymentPlan === 'THREE_INSTALLMENTS' ? '3× ' : 'comptant'}
+            <Panel key={e.id} className="!p-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className={`grid h-11 w-11 place-items-center rounded-xl ${tab === 'SUSPENDED' ? 'bg-[color:color-mix(in_srgb,var(--a-accent-2)_16%,transparent)] text-[color:var(--a-accent-2)]' : 'bg-[color:color-mix(in_srgb,var(--a-ok)_16%,transparent)] text-[color:var(--a-ok)]'}`}>
+                    <User className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <div className="font-semibold text-[color:var(--a-ink)]">{e.student.nom}</div>
+                    <div className="text-[12px] text-[color:var(--a-ink-dim)]">{e.student.email}</div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
-                <Clock className="w-4 h-4" />
-                {new Date(e.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-              </div>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-[color:var(--a-accent)]" />
+                  <div>
+                    <div className="text-[13px] font-medium text-[color:var(--a-ink)]">{e.course.title}</div>
+                    <div className="text-[11px] text-[color:var(--a-ink-dim)]">
+                      {e.course.price?.toLocaleString('fr-FR')} MAD · {e.paymentPlan === 'THREE_INSTALLMENTS' ? '3×' : 'comptant'}
+                    </div>
+                  </div>
+                </div>
 
-              {tab === 'SUSPENDED' ? (
-                <button
-                  onClick={() => setAccess(e, 'ACTIVE')}
-                  disabled={busy === e.id}
-                  className="flex items-center gap-2 px-5 py-2 bg-green-600 text-white rounded-xl font-semibold text-sm hover:bg-green-700 disabled:opacity-60"
-                >
-                  {busy === e.id ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                  Débloquer l'accès
-                </button>
-              ) : (
-                <button
-                  onClick={() => setAccess(e, 'SUSPENDED')}
-                  disabled={busy === e.id}
-                  className="flex items-center gap-2 px-5 py-2 bg-red-50 text-red-600 rounded-xl font-semibold text-sm hover:bg-red-100 disabled:opacity-60"
-                >
-                  {busy === e.id ? <Loader className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
-                  Suspendre
-                </button>
-              )}
-            </div>
+                <div className="flex items-center gap-1.5 text-[12px] text-[color:var(--a-ink-dim)]">
+                  <Clock className="h-3.5 w-3.5" />
+                  {new Date(e.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </div>
+
+                {tab === 'SUSPENDED' ? (
+                  <Btn variant="accent" onClick={() => setAccess(e, 'ACTIVE')} disabled={busy === e.id}>
+                    {busy === e.id ? <Loader className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />} Débloquer l'accès
+                  </Btn>
+                ) : (
+                  <Btn variant="danger" onClick={() => setAccess(e, 'SUSPENDED')} disabled={busy === e.id}>
+                    {busy === e.id ? <Loader className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Suspendre
+                  </Btn>
+                )}
+              </div>
+            </Panel>
           ))}
         </div>
       )}
 
-      <Modal isOpen={grantOpen} onClose={() => setGrantOpen(false)} title="Donner accès à une formation" size="md">
-        <form onSubmit={submitGrant} className="space-y-4">
-          <p className="text-sm text-gray-500">
+      <Modal
+        open={grantOpen}
+        onClose={() => setGrantOpen(false)}
+        title="Donner accès à une formation"
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setGrantOpen(false)}>Annuler</Btn>
+            <Btn variant="primary" onClick={submitGrant} disabled={granting || !grant.studentId || !grant.courseId}>
+              {granting ? <Loader className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />} Accorder l'accès
+            </Btn>
+          </>
+        }
+      >
+        <form onSubmit={submitGrant} className="flex flex-col gap-4">
+          <p className="text-[12.5px] text-[color:var(--a-ink-dim)]">
             Inscrit et active immédiatement l'accès d'un étudiant, sans paiement préalable.
           </p>
-          <div>
-            <label className="block text-sm font-semibold mb-1.5">Étudiant *</label>
-            <select required value={grant.studentId} onChange={(e) => setGrant({ ...grant, studentId: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFC107] outline-none">
+          <Field label="Étudiant">
+            <Select required value={grant.studentId} onChange={(e) => setGrant({ ...grant, studentId: e.target.value })}>
               <option value="">— Choisir —</option>
               {students.map((s) => <option key={s.id} value={s.id}>{s.nom} · {s.email}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold mb-1.5">Formation *</label>
-            <select required value={grant.courseId} onChange={(e) => setGrant({ ...grant, courseId: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFC107] outline-none">
+            </Select>
+          </Field>
+          <Field label="Formation">
+            <Select required value={grant.courseId} onChange={(e) => setGrant({ ...grant, courseId: e.target.value })}>
               <option value="">— Choisir —</option>
               {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold mb-1.5">Plan de paiement</label>
-            <select value={grant.paymentPlan} onChange={(e) => setGrant({ ...grant, paymentPlan: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFC107] outline-none">
+            </Select>
+          </Field>
+          <Field label="Plan de paiement">
+            <Select value={grant.paymentPlan} onChange={(e) => setGrant({ ...grant, paymentPlan: e.target.value })}>
               <option value="FULL">Comptant</option>
               <option value="THREE_INSTALLMENTS">Échéancier 3×</option>
-            </select>
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button type="submit" disabled={granting} className="flex-1 px-4 py-2.5 bg-[#FFC107] text-[#1A1A2E] font-bold rounded-lg hover:bg-yellow-400 flex items-center justify-center gap-2 disabled:opacity-60">
-              {granting ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Accorder l'accès
-            </button>
-            <button type="button" onClick={() => setGrantOpen(false)} className="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
-          </div>
+            </Select>
+          </Field>
         </form>
       </Modal>
+
+      <ToastHost toast={toast} onDone={() => setToast(null)} />
     </div>
   );
 }

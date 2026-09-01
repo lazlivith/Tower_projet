@@ -48,8 +48,11 @@ import InstructorAssignments from './pages/instructor/InstructorAssignments';
 import InstructorQuizzes from './pages/instructor/InstructorQuizzes';
 
 // Admin Pages
-import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminOverview from './pages/admin/AdminOverview';
 import CoursesManager from './pages/admin/CoursesManager';
+import InstructorsManager from './pages/admin/InstructorsManager';
+import AcademyManager from './pages/admin/AcademyManager';
 import UsersManager from './pages/admin/UsersManager';
 import PaymentsManager from './pages/admin/PaymentsManager';
 import PublicationsManager from './pages/admin/PublicationsManager';
@@ -260,97 +263,30 @@ export default function App() {
             }
           />
 
-          {/* Admin Routes with Dashboard Layout */}
-          <Route
-            path="/learn/admin"
-            element={
-              <ProtectedRoute requiredRole="MANAGER">
-                <DashboardLayout>
-                  <AdminDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/admin/publications"
-            element={
-              <ProtectedRoute requiredRole="MANAGER">
-                <DashboardLayout>
-                  <PublicationsManager />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/admin/projects"
-            element={
-              <ProtectedRoute requiredRole="MANAGER">
-                <DashboardLayout>
-                  <ProjectsManager />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/admin/services"
-            element={
-              <ProtectedRoute requiredRole="MANAGER">
-                <DashboardLayout>
-                  <AdminDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/admin/users"
-            element={
-              <ProtectedRoute requiredRole="MANAGER">
-                <DashboardLayout>
-                  <UsersManager />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/admin/courses"
-            element={
-              <ProtectedRoute requiredRole="MANAGER">
-                <DashboardLayout>
-                  <CoursesManager />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/admin/payments"
-            element={
-              <ProtectedRoute requiredRole="MANAGER">
-                <DashboardLayout>
-                  <PaymentsManager />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/admin/quotes"
-            element={
-              <ProtectedRoute requiredRole="MANAGER">
-                <DashboardLayout>
-                  <QuotesManager />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/admin/analytics"
-            element={
-              <ProtectedRoute requiredRole="MANAGER">
-                <DashboardLayout>
-                  <AdminDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+          {/* Admin Routes — back-office « ingénierie sombre » */}
+          {([
+            ['/learn/admin', <AdminOverview />],
+            ['/learn/admin/analytics', <AdminOverview />],
+            ['/learn/admin/courses', <CoursesManager />],
+            ['/learn/admin/instructors', <InstructorsManager />],
+            ['/learn/admin/academy', <AcademyManager />],
+            ['/learn/admin/users', <UsersManager />],
+            ['/learn/admin/payments', <PaymentsManager />],
+            ['/learn/admin/publications', <PublicationsManager />],
+            ['/learn/admin/projects', <ProjectsManager />],
+            ['/learn/admin/quotes', <QuotesManager />],
+          ] as [string, JSX.Element][]).map(([path, el]) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <ProtectedRoute requiredRole="MANAGER">
+                  <AdminLayout>{el}</AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+          ))}
+          <Route path="/learn/admin/services" element={<Navigate to="/learn/admin/courses" replace />} />
 
           {/* 404 - Redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
