@@ -60,6 +60,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
       mainNav = [
         { icon: Home, label: 'Tableau de bord', path: '/learn/student' },
         { icon: BookOpen, label: 'Mes Cours', path: '/learn/student/courses' },
+        { icon: MessageCircle, label: 'Espace de classe', path: '/learn/student/board' },
         { icon: Calendar, label: 'Sessions', path: '/learn/student/calendar' },
         { icon: Award, label: 'Certificats', path: '/learn/student/certificates' },
         { icon: Bell, label: 'Notifications', path: '/learn/student/notifications' },

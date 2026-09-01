@@ -1,231 +1,131 @@
-import { useState } from 'react';
-import { FileText, Check, X, Eye, Clock } from 'lucide-react';
-import { pendingAssignments } from '../../data/mockData';
-import Modal from '../../components/shared/Modal';
+import { useEffect, useState, useCallback } from 'react';
+import { ClipboardCheck, FileText, Loader2, CheckCircle } from 'lucide-react';
+import api from '../../services/api';
+import {
+  PageHeader, Panel, Btn, Chip, Field, Input, Textarea, Modal, EmptyState,
+  ToastHost, type Toast,
+} from '../../components/admin/ui';
+
+interface Submission {
+  id: string; grade: number | null; fileUrl: string | null; status: string; createdAt: string;
+  student: { nom: string; email: string };
+  assignment: { title: string; course: { title: string } };
+}
 
 export default function InstructorAssignments() {
-  const [assignments, setAssignments] = useState(pendingAssignments);
-  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [rows, setRows] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const [target, setTarget] = useState<Submission | null>(null);
   const [grade, setGrade] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const pendingCount = assignments.filter(a => a.status === 'pending').length;
+  const flash = (kind: Toast['kind'], msg: string) => setToast({ kind, msg });
 
-  const viewAssignment = (assignment: any) => {
-    setSelectedAssignment(assignment);
-    setGrade('');
-    setFeedback('');
-    setIsModalOpen(true);
-  };
-
-  const gradeAssignment = () => {
-    if (!grade) {
-      alert('Veuillez entrer une note');
-      return;
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await api.get('/assignments/pending');
+      setRows(r.data ?? []);
+    } catch {
+      flash('err', 'Erreur de chargement des devoirs.');
+    } finally {
+      setLoading(false);
     }
+  }, []);
+  useEffect(() => { load(); }, [load]);
 
-    setAssignments(assignments.map(a =>
-      a.id === selectedAssignment.id
-        ? { ...a, status: 'graded', grade: parseInt(grade), feedback }
-        : a
-    ));
+  const openGrade = (s: Submission) => { setTarget(s); setGrade(''); setFeedback(''); };
 
-    alert('Devoir corrigé avec succès!');
-    setIsModalOpen(false);
+  const submitGrade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!target) return;
+    const n = Number(grade);
+    if (Number.isNaN(n) || n < 0 || n > 100) { flash('err', 'Note entre 0 et 100.'); return; }
+    setSaving(true);
+    try {
+      await api.patch(`/assignments/${target.id}/grade`, { grade: n, feedback: feedback || undefined });
+      flash('ok', 'Devoir corrigé.');
+      setTarget(null);
+      load();
+    } catch (err: any) {
+      flash('err', err?.response?.data?.message || 'Erreur lors de la notation.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h2 className="mb-2">Devoirs à Corriger</h2>
-        <p className="text-gray-600">Gérez et corrigez les travaux de vos étudiants</p>
-      </div>
+    <div className="mx-auto max-w-[1100px]">
+      <PageHeader
+        eyebrow="Formateur"
+        title="Devoirs à corriger"
+        description="Copies remises par vos élèves, en attente de correction."
+        actions={<Btn variant="ghost" onClick={load}>Actualiser</Btn>}
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-6 rounded-lg shadow-lg">
-          <div className="flex items-center gap-3">
-            <Clock className="w-10 h-10" />
-            <div>
-              <div className="text-3xl font-bold">{pendingCount}</div>
-              <div className="text-sm opacity-80">En attente</div>
-            </div>
+      {loading ? (
+        <div className="text-[13px] text-[color:var(--a-ink-dim)]">Chargement…</div>
+      ) : rows.length === 0 ? (
+        <EmptyState>
+          <div className="flex flex-col items-center gap-2">
+            <ClipboardCheck className="h-8 w-8 text-[color:var(--a-ok)]" />
+            Aucune copie en attente. Tout est corrigé.
           </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg shadow-lg">
-          <div className="flex items-center gap-3">
-            <Check className="w-10 h-10" />
-            <div>
-              <div className="text-3xl font-bold">
-                {assignments.filter(a => a.status === 'graded').length}
-              </div>
-              <div className="text-sm opacity-80">Corrigés</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg">
-          <div className="flex items-center gap-3">
-            <FileText className="w-10 h-10" />
-            <div>
-              <div className="text-3xl font-bold">{assignments.length}</div>
-              <div className="text-sm opacity-80">Total</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="flex border-b border-gray-200">
-          <button className="px-6 py-4 text-sm font-medium border-b-2 border-[#FFC107] text-[#FFC107]">
-            En attente ({pendingCount})
-          </button>
-          <button className="px-6 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
-            Corrigés
-          </button>
-          <button className="px-6 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
-            Tous
-          </button>
-        </div>
-      </div>
-
-      {/* Assignments List */}
-      <div className="space-y-4">
-        {assignments.filter(a => a.status === 'pending').map((assignment) => (
-          <div key={assignment.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <FileText className="w-5 h-5 text-[#FFC107]" />
-                  <h4>{assignment.student}</h4>
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
-                    À corriger
-                  </span>
-                </div>
-                <div className="ml-8">
-                  <p className="text-sm text-gray-600 mb-1">{assignment.course}</p>
-                  <p className="text-sm font-medium mb-2">{assignment.assignment}</p>
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Soumis le {new Date(assignment.submittedDate).toLocaleDateString('fr-FR')}
-                    </span>
+        </EmptyState>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {rows.map((s) => (
+            <Panel key={s.id} className="!p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-[color:var(--a-ink)]">{s.student.nom}</span>
+                    <Chip tone="amber">À corriger</Chip>
                   </div>
+                  <div className="text-[12px] text-[color:var(--a-ink-dim)]">{s.assignment.course.title} — {s.assignment.title}</div>
+                  <div className="text-[11px] text-[color:var(--a-ink-dim)]">Remis le {new Date(s.createdAt).toLocaleDateString('fr-FR')}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {s.fileUrl && (
+                    <a href={s.fileUrl} target="_blank" rel="noreferrer" className="a-btn a-btn-ghost a-btn-sm"><FileText className="h-3.5 w-3.5" /> Copie</a>
+                  )}
+                  <Btn size="sm" variant="primary" onClick={() => openGrade(s)}><CheckCircle className="h-3.5 w-3.5" /> Corriger & noter</Btn>
                 </div>
               </div>
-              <button
-                onClick={() => viewAssignment(assignment)}
-                className="px-4 py-2 bg-[#FFC107] text-[#1A1A2E] rounded-lg hover:bg-[#FFD54F] transition-colors text-sm flex items-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                Corriger
-              </button>
-            </div>
-          </div>
-        ))}
+            </Panel>
+          ))}
+        </div>
+      )}
 
-        {pendingCount === 0 && (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <Check className="w-16 h-16 mx-auto mb-4 text-green-500" />
-            <h3 className="mb-2 text-gray-600">Tous les devoirs sont corrigés !</h3>
-            <p className="text-sm text-gray-500">Excellent travail 👏</p>
-          </div>
-        )}
-      </div>
-
-      {/* Grading Modal */}
       <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Correction du devoir"
-        size="lg"
+        open={!!target}
+        onClose={() => setTarget(null)}
+        title={`Noter — ${target?.student.nom ?? ''}`}
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setTarget(null)}>Annuler</Btn>
+            <Btn variant="primary" onClick={submitGrade} disabled={saving || grade === ''}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />} Enregistrer la note
+            </Btn>
+          </>
+        }
       >
-        {selectedAssignment && (
-          <div className="space-y-6">
-            {/* Student Info */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-semibold">Étudiant:</span> {selectedAssignment.student}
-                </div>
-                <div>
-                  <span className="font-semibold">Cours:</span> {selectedAssignment.course}
-                </div>
-                <div>
-                  <span className="font-semibold">Devoir:</span> {selectedAssignment.assignment}
-                </div>
-                <div>
-                  <span className="font-semibold">Date:</span>{' '}
-                  {new Date(selectedAssignment.submittedDate).toLocaleDateString('fr-FR')}
-                </div>
-              </div>
-            </div>
-
-            {/* Assignment Content (Simulated) */}
-            <div>
-              <h4 className="mb-2">Contenu du devoir</h4>
-              <div className="border border-gray-200 rounded-lg p-6 bg-white max-h-64 overflow-y-auto">
-                <p className="text-gray-700 mb-4">
-                  [Contenu du devoir soumis par l'étudiant...]
-                </p>
-                <p className="text-gray-700">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
-                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                </p>
-              </div>
-            </div>
-
-            {/* Grading Form */}
-            <div className="space-y-4">
-              <div>
-                <label className="block mb-2">Note (sur 100) *</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={grade}
-                  onChange={(e) => setGrade(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                  placeholder="Ex: 85"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-2">Commentaires et feedback</label>
-                <textarea
-                  rows={6}
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-                  placeholder="Donnez votre retour à l'étudiant..."
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2 pt-4 border-t">
-              <button
-                onClick={gradeAssignment}
-                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-              >
-                <Check className="w-4 h-4" />
-                Valider la correction
-              </button>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                Annuler
-              </button>
-            </div>
+        <form onSubmit={submitGrade} className="flex flex-col gap-4">
+          <div className="text-[12.5px] text-[color:var(--a-ink-dim)]">
+            {target?.assignment.course.title} — {target?.assignment.title}
           </div>
-        )}
+          <Field label="Note / 100">
+            <Input type="number" min={0} max={100} value={grade} onChange={(e) => setGrade(e.target.value)} required />
+          </Field>
+          <Field label="Appréciation (optionnel)">
+            <Textarea rows={3} value={feedback} onChange={(e) => setFeedback(e.target.value)} />
+          </Field>
+        </form>
       </Modal>
+
+      <ToastHost toast={toast} onDone={() => setToast(null)} />
     </div>
   );
 }

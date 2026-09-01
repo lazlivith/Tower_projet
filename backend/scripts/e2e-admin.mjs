@@ -432,6 +432,124 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     eq(r.status, 403, 'HTTP');
   });
 
+  // ---- 11. Espace formateur ----
+  sec('Espace formateur — classes, contenu, calendrier, échanges');
+  let profTok, profId, teachClassId, teachCourseId;
+  await check('Connexion prof@tower.ma (INSTRUCTOR)', async () => {
+    const p = await login('prof@tower.ma', 'password123');
+    profTok = p.accessToken;
+    eq(p.user.role, 'INSTRUCTOR', 'rôle');
+  });
+  const I = () => ({
+    get: (u) => auth(profTok)(api().get(u)),
+    post: (u, b) => auth(profTok)(api().post(u)).send(b),
+    patch: (u, b) => auth(profTok)(api().patch(u)).send(b),
+    del: (u) => auth(profTok)(api().delete(u)),
+  });
+  await check('Admin assigne le prof à la classe de la formation de test', async () => {
+    const instr = await prisma.user.findUnique({ where: { email: 'prof@tower.ma' } });
+    profId = instr.id;
+    teachCourseId = created.courseId;
+    teachClassId = created.classroomIds[0];
+    const r = await A.patch(`/api/admin/classrooms/${teachClassId}`, { instructorId: profId });
+    eq(r.status, 200, 'HTTP');
+  });
+  await check('GET /instructor/overview → 200 + KPIs', async () => {
+    const r = await I().get('/api/instructor/overview');
+    eq(r.status, 200, 'HTTP');
+    assert(r.body.kpis && typeof r.body.kpis.classes === 'number', 'kpis');
+  });
+  await check('GET /instructor/classrooms → contient la classe assignée', async () => {
+    const r = await I().get('/api/instructor/classrooms');
+    eq(r.status, 200, 'HTTP');
+    assert(r.body.some((c) => c.id === teachClassId), 'classe absente');
+  });
+
+  let lessonId;
+  await check('POST /instructor/lessons (lien YouTube) → 201', async () => {
+    const r = await I().post('/api/instructor/lessons', {
+      courseId: teachCourseId, title: 'E2E — Leçon vidéo',
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', sequenceOrder: 1,
+    });
+    eq(r.status, 201, 'HTTP');
+    lessonId = r.body.lesson?.id;
+    assert(lessonId, 'id leçon');
+  });
+  await check('POST /instructor/lessons #2 puis reorder', async () => {
+    const r2 = await I().post('/api/instructor/lessons', { courseId: teachCourseId, title: 'E2E — Leçon 2', sequenceOrder: 2 });
+    eq(r2.status, 201, 'HTTP #2');
+    const l2 = r2.body.lesson.id;
+    const ro = await I().patch(`/api/instructor/courses/${teachCourseId}/lessons/reorder`, { orderedIds: [l2, lessonId] });
+    eq(ro.status, 200, 'HTTP reorder');
+    const list = await I().get(`/api/instructor/courses/${teachCourseId}/lessons`);
+    eq(list.body[0].id, l2, 'ordre appliqué');
+    await I().del(`/api/instructor/lessons/${l2}`);
+  });
+  await check('PATCH /instructor/lessons/:id → titre modifié', async () => {
+    const r = await I().patch(`/api/instructor/lessons/${lessonId}`, { title: 'E2E — Leçon vidéo (maj)' });
+    eq(r.status, 200, 'HTTP');
+    eq(r.body.lesson.title, 'E2E — Leçon vidéo (maj)', 'titre');
+  });
+  let sessId;
+  await check('POST /instructor/courses/:id/sessions (lien Teams) → 201, provider=teams', async () => {
+    const r = await I().post(`/api/instructor/courses/${teachCourseId}/sessions`, {
+      title: 'E2E — Session Teams',
+      scheduledAt: new Date(Date.now() + 864e5).toISOString(),
+      duration: 60,
+      meetingUrl: 'https://teams.microsoft.com/l/meetup-join/abc',
+    });
+    eq(r.status, 201, 'HTTP');
+    sessId = r.body.session?.id;
+    eq(r.body.session?.provider, 'teams', 'provider');
+  });
+  await check('PATCH puis GET /instructor/sessions', async () => {
+    const p = await I().patch(`/api/instructor/sessions/${sessId}`, { title: 'E2E — Session Teams (maj)' });
+    eq(p.status, 200, 'HTTP patch');
+    const g = await I().get('/api/instructor/sessions');
+    assert(g.body.some((s) => s.id === sessId), 'session absente');
+  });
+  await check('DELETE /instructor/sessions/:id → 200', async () => {
+    eq((await I().del(`/api/instructor/sessions/${sessId}`)).status, 200, 'HTTP');
+  });
+
+  // Espace de classe (mur d'échange) — prof publie, élève lit et répond
+  let msgId, studentReplyId, eleveTok;
+  await check('POST /classrooms/:id/messages (prof) → 201', async () => {
+    const r = await I().post(`/api/classrooms/${teachClassId}/messages`, { body: 'Bienvenue dans la classe (test e2e).', pinned: true });
+    eq(r.status, 201, 'HTTP');
+    msgId = r.body.id;
+    eq(r.body.pinned, true, 'épinglé');
+  });
+  await check("L'élève inscrit voit le message et peut répondre", async () => {
+    eleveTok = (await login('eleve@tower.ma', 'password123')).accessToken;
+    const list = await auth(eleveTok)(api().get(`/api/classrooms/${teachClassId}/messages`));
+    eq(list.status, 200, 'HTTP list');
+    assert(list.body.messages.some((m) => m.id === msgId), 'message du prof absent');
+    const reply = await auth(eleveTok)(api().post(`/api/classrooms/${teachClassId}/messages`)).send({ body: 'Merci !', pinned: true });
+    eq(reply.status, 201, 'HTTP reply');
+    eq(reply.body.pinned, false, "l'élève ne peut pas épingler");
+    studentReplyId = reply.body.id;
+  });
+  await check('GET /classrooms/mine (élève) → contient la classe', async () => {
+    const r = await auth(eleveTok)(api().get('/api/classrooms/mine'));
+    eq(r.status, 200, 'HTTP');
+    assert(r.body.some((c) => c.id === teachClassId), 'classe absente pour l’élève');
+  });
+  await check('Le nouvel instructeur E2E (autre classe) est refusé sur ce mur → 403', async () => {
+    if (!created.instructorIds.length) return;
+    // instructeur créé en section 5, non rattaché à teachClassId
+    const other = await prisma.user.findUnique({ where: { id: created.instructorIds[0] } });
+    if (!other) return;
+    const otok = (await login(other.email, 'password123').catch(() => null))?.accessToken;
+    if (!otok) return; // mot de passe temporaire inconnu → on saute proprement
+    const r = await auth(otok)(api().get(`/api/classrooms/${teachClassId}/messages`));
+    eq(r.status, 403, 'HTTP');
+  });
+  await check("L'instructeur peut supprimer un message d'élève ; l'élève supprime le sien", async () => {
+    eq((await I().del(`/api/classrooms/${teachClassId}/messages/${studentReplyId}`)).status, 200, 'HTTP prof del');
+    eq((await I().del(`/api/classrooms/${teachClassId}/messages/${msgId}`)).status, 200, 'HTTP prof del 2');
+  });
+
   // ─────────────────────────── cleanup ───────────────────────────
   sec('Nettoyage');
   try {

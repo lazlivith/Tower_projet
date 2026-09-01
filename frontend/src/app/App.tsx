@@ -38,12 +38,17 @@ import SessionRoom from './pages/learn/SessionRoom';
 import StudentDashboard from './pages/student/StudentDashboard';
 import CourseDetail from './pages/student/CourseDetail';
 import StudentCalendar from './pages/student/StudentCalendar';
+import StudentClassBoard from './pages/student/StudentClassBoard';
 import StudentCertificates from './pages/student/StudentCertificates';
 import StudentNotifications from './pages/student/StudentNotifications';
 
 // Instructor Pages
-import InstructorDashboard from './pages/instructor/InstructorDashboard';
-import InstructorCourses from './pages/instructor/InstructorCourses';
+import InstructorLayout from './components/instructor/InstructorLayout';
+import InstructorOverview from './pages/instructor/InstructorOverview';
+import InstructorClasses from './pages/instructor/InstructorClasses';
+import InstructorCourseContent from './pages/instructor/InstructorCourseContent';
+import InstructorCalendar from './pages/instructor/InstructorCalendar';
+import InstructorClassBoard from './pages/instructor/InstructorClassBoard';
 import InstructorAssignments from './pages/instructor/InstructorAssignments';
 import InstructorQuizzes from './pages/instructor/InstructorQuizzes';
 
@@ -181,6 +186,16 @@ export default function App() {
             }
           />
           <Route
+            path="/learn/student/board"
+            element={
+              <ProtectedRoute requiredRole="STUDENT" requireAccess>
+                <DashboardLayout>
+                  <StudentClassBoard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/learn/student/notifications"
             element={
               <ProtectedRoute requiredRole="STUDENT" requireAccess>
@@ -191,77 +206,30 @@ export default function App() {
             }
           />
 
-          {/* Instructor Routes with Dashboard Layout */}
-          <Route
-            path="/learn/instructor"
-            element={
-              <ProtectedRoute requiredRole="INSTRUCTOR">
-                <DashboardLayout>
-                  <InstructorDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/instructor/courses"
-            element={
-              <ProtectedRoute requiredRole="INSTRUCTOR">
-                <DashboardLayout>
-                  <InstructorCourses />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/instructor/assignments"
-            element={
-              <ProtectedRoute requiredRole="INSTRUCTOR">
-                <DashboardLayout>
-                  <InstructorAssignments />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/instructor/quizzes"
-            element={
-              <ProtectedRoute requiredRole="INSTRUCTOR">
-                <DashboardLayout>
-                  <InstructorQuizzes />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/instructor/messages"
-            element={
-              <ProtectedRoute requiredRole="INSTRUCTOR">
-                <DashboardLayout>
-                  <InstructorDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/instructor/sessions"
-            element={
-              <ProtectedRoute requiredRole="INSTRUCTOR">
-                <DashboardLayout>
-                  <InstructorDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/learn/instructor/stats"
-            element={
-              <ProtectedRoute requiredRole="INSTRUCTOR">
-                <DashboardLayout>
-                  <InstructorDashboard />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+          {/* Instructor Routes — espace formateur « ingénierie sombre » */}
+          {([
+            ['/learn/instructor', <InstructorOverview />],
+            ['/learn/instructor/classes', <InstructorClasses />],
+            ['/learn/instructor/content', <InstructorCourseContent />],
+            ['/learn/instructor/calendar', <InstructorCalendar />],
+            ['/learn/instructor/board', <InstructorClassBoard />],
+            ['/learn/instructor/assignments', <InstructorAssignments />],
+            ['/learn/instructor/quizzes', <InstructorQuizzes />],
+          ] as [string, JSX.Element][]).map(([path, el]) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <ProtectedRoute requiredRole="INSTRUCTOR">
+                  <InstructorLayout>{el}</InstructorLayout>
+                </ProtectedRoute>
+              }
+            />
+          ))}
+          <Route path="/learn/instructor/courses" element={<Navigate to="/learn/instructor/content" replace />} />
+          <Route path="/learn/instructor/messages" element={<Navigate to="/learn/instructor/board" replace />} />
+          <Route path="/learn/instructor/sessions" element={<Navigate to="/learn/instructor/calendar" replace />} />
+          <Route path="/learn/instructor/stats" element={<Navigate to="/learn/instructor" replace />} />
 
           {/* Admin Routes — back-office « ingénierie sombre » */}
           {([
