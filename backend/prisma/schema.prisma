@@ -106,6 +106,14 @@ model Course {
   isPublished   Boolean  @default(false) @map("is_published")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp
 
+  // --- Fiche pédagogique vitrine (optionnel) ---
+  audience      String? @db.Text // public visé
+  prerequisites String? @map("prerequisites") @db.Text // prérequis
+  format        String? @db.VarChar(255) // ex: "Présentiel Casablanca ou classe virtuelle"
+  priceLabel    String? @map("price_label") @db.VarChar(120) // ex: "6 500 MAD HT / participant"
+  objectives    Json? // string[] — objectifs pédagogiques
+  syllabus      Json? // [{ label, title, points: string[] }] — programme
+
   // Relations
   lessons      ModuleLesson[]
   enrollments  Enrollment[]
@@ -359,6 +367,13 @@ model Project {
   isPublished Boolean       @default(false) @map("is_published")
   createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamp
   updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp
+
+  // --- Étude de cas vitrine (optionnel) ---
+  location  String? @db.VarChar(160) // ex: "Casablanca"
+  surface   String? @db.VarChar(80) // ex: "12 000 m²"
+  missions  String? @db.Text // missions confiées
+  challenge String? @db.Text // défi technique
+  solution  String? @db.Text // solution apportée
 
   @@map("projects")
 }

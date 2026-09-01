@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { ArrowUpRight } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
 import { useReveal } from '../../hooks/useReveal';
 
@@ -68,7 +70,7 @@ export default function Projects() {
         ) : (
           <div className="grid gap-x-8 gap-y-16 md:grid-cols-2">
             {projects.map((p, i) => (
-              <article key={p.id} className={`fade-up ${i % 3 === 0 ? 'md:col-span-2' : ''}`}>
+              <Link to={`/projets/${p.id}`} key={p.id} className={`fade-up group block ${i % 3 === 0 ? 'md:col-span-2' : ''}`}>
                 <div className={`reveal-img w-full bg-[color:var(--color-line)] ${i % 3 === 0 ? 'aspect-[16/9]' : 'aspect-[4/3]'}`}>
                   <img
                     src={toAbsoluteUrl(p.imageUrl) || PLACEHOLDER}
@@ -78,7 +80,10 @@ export default function Projects() {
                   />
                 </div>
                 <div className="mt-5 flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-2xl sm:text-3xl">{p.title}</h2>
+                  <h2 className="flex items-center gap-2 text-2xl sm:text-3xl">
+                    {p.title}
+                    <ArrowUpRight className="w-5 h-5 opacity-0 transition-opacity group-hover:opacity-100" />
+                  </h2>
                   <span className="text-[12px] uppercase tracking-[0.16em] text-[color:var(--color-ink-soft)]">
                     {p.category} · {p.status === 'ONGOING' ? 'En cours' : 'Réalisé'}
                   </span>
@@ -86,7 +91,7 @@ export default function Projects() {
                 <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">
                   {p.description}
                 </p>
-              </article>
+              </Link>
             ))}
           </div>
         )}

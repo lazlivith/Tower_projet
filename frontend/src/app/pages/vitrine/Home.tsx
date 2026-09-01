@@ -9,17 +9,32 @@ const HERO_IMG =
   'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80';
 const PLACEHOLDER = 'https://placehold.co/1200x900/17160f/faf9f6?text=Tower+Structure';
 
+const WHY = [
+  {
+    t: 'Rigueur & conformité',
+    d: "Calculs de structures (Eurocodes, RPS) et modélisation avancée pour garantir la durabilité et la sécurité de vos ouvrages.",
+  },
+  {
+    t: 'Expertise terrain & digitale',
+    d: 'Alliance unique entre expérience de chantier, ingénierie de pointe et méthodologie BIM.',
+  },
+  {
+    t: 'Formation continue',
+    d: 'Transfert de savoir-faire aux équipes techniques pour maîtriser les outils et normes actuels.',
+  },
+];
+
 const SERVICES = [
-  { n: '01', t: 'BIM & Modélisation', d: 'Maquette numérique structure, coordination inter-lots, dossiers d\'exécution exploitables.' },
-  { n: '02', t: 'Calculs Eurocodes', d: 'Dimensionnement béton, métal et mixte selon EN 1992/1993/1998. Notes de calcul traçables.' },
-  { n: '03', t: 'Diagnostic & Confortement', d: 'Inspection, pathologie du bâti, renforcement de structures existantes en site occupé.' },
+  { n: '01', t: "Études d'exécution & calculs", d: 'Béton armé (EC2), charpente métallique (EC3), mixte. Étude parasismique EC8 / RPS. Plans de coffrage et de ferraillage.', to: '/services/exe' },
+  { n: '02', t: 'Coordination BIM & synthèse', d: 'Maquettes structurelles LOD 100 à 400, détection de clashs structure / architecture / MEP, livrables RVT et IFC.', to: '/services/bim' },
+  { n: '03', t: 'Diagnostic & réhabilitation', d: "Audit d'ouvrages existants, capacité portante résiduelle, ingénierie de confortement (carbone, chemisage, acier).", to: '/services/diagnostic' },
 ];
 
 const STATS = [
-  { v: '15+', l: "années d'expertise" },
-  { v: '200+', l: 'projets étudiés' },
-  { v: '500+', l: 'ingénieurs formés' },
-  { v: 'BIM', l: 'méthodologie systématique' },
+  { v: 'EC0 → EC8', l: 'Eurocodes maîtrisés' },
+  { v: 'LOD 400', l: 'niveau de détail BIM' },
+  { v: 'RPS 2000', l: 'règlement parasismique' },
+  { v: 'EXE', l: "dossiers d'exécution" },
 ];
 
 const TESTIMONIALS = [
@@ -53,23 +68,23 @@ export default function Home() {
         <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/70" />
         <div className="relative mx-auto flex h-full max-w-[1400px] flex-col justify-end px-5 pb-20 sm:px-8 lg:px-12">
-          <p className="eyebrow text-white/70">Bureau d'ingénierie · Formation BIM</p>
-          <h1 className="mt-5 max-w-4xl font-[family-name:var(--font-display)] text-[2.6rem] font-medium leading-[1.05] text-white sm:text-6xl lg:text-[5rem]">
-            La structure, pensée avec précision.
+          <p className="eyebrow text-white/70">Bureau d'études structure · Centre de formation BIM</p>
+          <h1 className="mt-5 max-w-5xl font-[family-name:var(--font-display)] text-[2.3rem] font-medium leading-[1.06] text-white sm:text-5xl lg:text-[4.4rem]">
+            L'ingénierie structurelle d'excellence et la montée en compétences BIM.
           </h1>
-          <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-white/75">
-            De l'étude de structure au dossier d'exécution — et la montée en compétences de vos équipes,
-            avec une méthodologie BIM appliquée à chaque projet.
+          <p className="mt-6 max-w-2xl text-[15px] leading-relaxed text-white/75">
+            De l'étude de structure complexe à l'optimisation des dossiers d'exécution, nous accompagnons
+            les maîtres d'ouvrage et formons les ingénieurs de demain.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-5">
             <Link
               to="/quote"
               className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[13.5px] font-medium text-[color:var(--color-ink)] transition-colors hover:bg-white/90"
             >
-              Démarrer un projet
+              Demander une étude de structure
               <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
-            <Link to="/projets" className="arrow-link text-white/90">Voir les réalisations</Link>
+            <Link to="/formations" className="arrow-link text-white/90">Découvrir nos formations</Link>
           </div>
         </div>
         <div className="absolute bottom-6 right-6 hidden text-white/60 sm:block">
@@ -77,25 +92,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---------- MANIFESTE ---------- */}
+      {/* ---------- POURQUOI NOUS ---------- */}
       <section className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 lg:px-12 lg:py-36">
         <div className="grid gap-10 md:grid-cols-12">
           <div className="md:col-span-4">
-            <p className="eyebrow">Le studio</p>
+            <p className="eyebrow">Pourquoi Tower Structure</p>
+            <h2 className="mt-3 text-3xl sm:text-4xl">Une exigence, deux métiers</h2>
           </div>
-          <div className="fade-up md:col-span-8">
-            <p className="font-[family-name:var(--font-display)] text-2xl font-normal leading-[1.4] sm:text-[2rem]">
-              Tower Structure conçoit et vérifie des structures — bâtiment, industrie, ouvrages d'art —
-              et forme les ingénieurs qui les construiront. Une même exigence&nbsp;: des choix
-              justifiés, des notes de calcul traçables, une maquette numérique tenue à jour.
-            </p>
+          <div className="md:col-span-8">
+            {WHY.map((w) => (
+              <div key={w.t} className="fade-up border-t border-[color:var(--color-line)] py-8 first:border-t-0">
+                <h3 className="text-xl sm:text-2xl">{w.t}</h3>
+                <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">{w.d}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="mt-20 grid grid-cols-2 gap-8 border-t border-[color:var(--color-line)] pt-10 md:grid-cols-4">
+        <div className="mt-16 grid grid-cols-2 gap-8 border-t border-[color:var(--color-line)] pt-10 md:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.l} className="fade-up">
-              <div className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl">{s.v}</div>
+              <div className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl">{s.v}</div>
               <div className="mt-2 text-[13px] text-[color:var(--color-ink-soft)]">{s.l}</div>
             </div>
           ))}
@@ -119,7 +136,7 @@ export default function Home() {
             {(projects.length ? projects : Array.from({ length: 2 })).map((p: any, i) => (
               <Link
                 key={p?.id ?? i}
-                to="/projets"
+                to={p?.id ? `/projets/${p.id}` : '/projets'}
                 className={`fade-up group block ${i % 3 === 0 ? 'md:col-span-2' : ''}`}
               >
                 <div className="reveal-img aspect-[16/10] w-full bg-[color:var(--color-line)]">
@@ -158,13 +175,20 @@ export default function Home() {
           </div>
           <div className="md:col-span-8">
             {SERVICES.map((s) => (
-              <div key={s.n} className="fade-up grid grid-cols-[auto_1fr] gap-6 border-t border-[color:var(--color-line)] py-8 first:border-t-0 md:gap-10">
+              <Link
+                key={s.n}
+                to={s.to}
+                className="fade-up group grid grid-cols-[auto_1fr] gap-6 border-t border-[color:var(--color-line)] py-8 first:border-t-0 md:gap-10"
+              >
                 <span className="font-[family-name:var(--font-display)] text-sm text-[color:var(--color-ink-soft)]">{s.n}</span>
                 <div>
-                  <h3 className="text-xl sm:text-2xl">{s.t}</h3>
+                  <h3 className="flex items-center gap-2 text-xl sm:text-2xl">
+                    {s.t}
+                    <ArrowUpRight className="w-4 h-4 opacity-0 transition-opacity group-hover:opacity-100" />
+                  </h3>
                   <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">{s.d}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -185,7 +209,7 @@ export default function Home() {
 
           <div className="mt-14 grid gap-8 md:grid-cols-3">
             {(courses.length ? courses : Array.from({ length: 3 })).map((c: any, i) => (
-              <Link key={c?.id ?? i} to="/formations" className="fade-up group block">
+              <Link key={c?.id ?? i} to={c?.id ? `/formations/${c.id}` : '/formations'} className="fade-up group block">
                 <div className="reveal-img aspect-[4/3] w-full bg-[color:var(--color-line)]">
                   <img
                     src={toAbsoluteUrl(c?.imageUrl) || PLACEHOLDER}

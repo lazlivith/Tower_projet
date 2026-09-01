@@ -19,8 +19,12 @@ type ProjectStatus = 'ONGOING' | 'COMPLETED';
 interface ProjectForm {
   title: string; category: string; description: string;
   imageUrl: string; status: ProjectStatus; isPublished: boolean;
+  location: string; surface: string; missions: string; challenge: string; solution: string;
 }
-const empty: ProjectForm = { title: '', category: 'Résidentiel', description: '', imageUrl: '', status: 'COMPLETED', isPublished: true };
+const empty: ProjectForm = {
+  title: '', category: 'Résidentiel', description: '', imageUrl: '', status: 'COMPLETED', isPublished: true,
+  location: '', surface: '', missions: '', challenge: '', solution: '',
+};
 type Filter = 'ALL' | 'COMPLETED' | 'ONGOING';
 
 export default function ProjectsManager() {
@@ -59,8 +63,11 @@ export default function ProjectsManager() {
   const openEdit = (p: Project) => {
     setEditing(p);
     setForm({
+      ...empty,
       title: p.title, category: p.category, description: p.description,
       imageUrl: p.imageUrl ?? '', status: p.status, isPublished: p.isPublished,
+      location: (p as any).location ?? '', surface: (p as any).surface ?? '',
+      missions: (p as any).missions ?? '', challenge: (p as any).challenge ?? '', solution: (p as any).solution ?? '',
     });
     setIsOpen(true);
   };
@@ -91,6 +98,11 @@ export default function ProjectsManager() {
         imageUrl: form.imageUrl,
         status: form.status,
         isPublished: form.isPublished,
+        location: form.location,
+        surface: form.surface,
+        missions: form.missions,
+        challenge: form.challenge,
+        solution: form.solution,
       };
       if (editing) {
         await api.put(`/cms/projects/${editing.id}`, payload);
@@ -232,6 +244,32 @@ export default function ProjectsManager() {
             <textarea required rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFC107] outline-none" />
           </div>
+
+          <details className="rounded-xl border border-gray-200 p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-gray-700">Étude de cas (page détail) — optionnel</summary>
+            <div className="mt-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Lieu</label>
+                  <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#FFC107]" placeholder="Casablanca" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Surface</label>
+                  <input value={form.surface} onChange={(e) => setForm({ ...form, surface: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#FFC107]" placeholder="12 000 m²" />
+                </div>
+              </div>
+              {([['missions', 'Missions confiées'], ['challenge', 'Défi technique'], ['solution', 'Solution apportée']] as const).map(([k, label]) => (
+                <div key={k}>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                  <textarea rows={2} value={(form as any)[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#FFC107]" />
+                </div>
+              ))}
+            </div>
+          </details>
+
           <div>
             <label className="block text-sm font-semibold mb-1.5">Image</label>
             <div className="flex gap-2">

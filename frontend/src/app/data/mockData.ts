@@ -1,63 +1,87 @@
-// Services data
-export const services = [
+// Services data — contenu réel Tower Structure (statique, structuré)
+export interface ServiceSheet {
+  id: string;
+  title: string;
+  description: string;      // résumé court (liste Services + Accueil)
+  image: string;
+  details: {
+    objective: string;       // « Objectif : … »
+    scope: string[];         // Périmètre d'action
+    deliverables: string[];  // Livrables techniques
+  };
+}
+
+export const services: ServiceSheet[] = [
+  {
+    id: 'exe',
+    title: "Études d'exécution (EXE) & calculs de structure",
+    description:
+      "Conception et dimensionnement en béton armé, charpente métallique et bois. Notes de calcul et plans d'exécution optimisés.",
+    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=80',
+    details: {
+      objective:
+        "Transformer le concept architectural en une structure sûre, pérenne et optimisée en coût de construction.",
+      scope: [
+        'Descente de charges et dimensionnement des fondations (superficielles, profondes / pieux).',
+        'Calculs de structures en béton armé (EC2), charpente métallique (EC3) et mixte.',
+        "Étude parasismique avancée selon l'Eurocode 8 et le règlement parasismique national (RPS 2000).",
+        "Optimisation des métrés et des notes de calcul pour les dossiers d'exécution (EXE).",
+      ],
+      deliverables: [
+        'Notes de calcul exhaustives, conformes aux exigences des bureaux de contrôle.',
+        'Plans de coffrage et plans de ferraillage détaillés pour le chantier.',
+      ],
+    },
+  },
   {
     id: 'bim',
-    title: 'BIM & Modélisation 3D',
-    description: 'Conception et modélisation de structures en 3D avec les outils BIM les plus avancés',
-    image: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop',
+    title: 'Coordination BIM & synthèse technique inter-lots',
+    description:
+      "Maquettes numériques structurelles (LOD 100 à 400), détection de clashs et synthèse avec les lots architecture et MEP.",
+    image: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80',
     details: {
-      overview: 'Service complet de modélisation BIM pour vos projets de construction',
-      features: [
-        'Modélisation 3D précise',
-        'Coordination multidisciplinaire',
-        'Détection des conflits',
-        'Documentation automatisée',
+      objective:
+        'Éliminer les erreurs de conception avant le démarrage du chantier pour éviter les surcoûts et les retards.',
+      scope: [
+        'Modélisation de maquettes numériques structurelles (niveau de détail LOD 100 à 400).',
+        "Détection d'interférences (clash detection) entre la structure, l'architecture et les réseaux (MEP).",
+        'Réunions de synthèse et gestion des réserves avec tous les intervenants du projet.',
       ],
-      faqs: [
-        { question: 'Quels logiciels utilisez-vous ?', answer: 'Revit, Tekla, ArchiCAD' },
-        { question: 'Délai moyen ?', answer: '2-4 semaines selon complexité' },
+      deliverables: [
+        'Rapports de synthèse et matrice de clashs.',
+        'Fichiers natifs RVT et livrables universels IFC.',
       ],
     },
   },
   {
     id: 'diagnostic',
-    title: 'Diagnostic Structurel',
-    description: "Analyse approfondie de l'état de vos structures existantes",
-    image: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&h=600&fit=crop',
+    title: 'Diagnostic structural & audit de réhabilitation',
+    description:
+      "Audit d'ouvrages existants, calcul de capacité portante résiduelle et ingénierie de confortement.",
+    image: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=80',
     details: {
-      overview: 'Expertise complète pour évaluer la santé de vos structures',
-      features: [
-        'Inspection visuelle détaillée',
-        'Essais non destructifs',
-        'Rapport technique complet',
-        'Recommandations de réparation',
+      objective:
+        "Évaluer l'état de santé d'un bâtiment existant et définir des solutions de confortement.",
+      scope: [
+        'Relevé de désordres (fissures, corrosion des armatures, flèches excessives).',
+        "Calcul de la capacité portante résiduelle avant surélévation ou changement d'usage.",
+        'Ingénierie de confortement (lamelles carbone, résines, chemisage béton, profilés acier).',
       ],
-      faqs: [
-        { question: 'Durée d\'une intervention ?', answer: '1-3 jours selon la taille' },
-        { question: 'Incluez-vous les tests de matériaux ?', answer: 'Oui, si nécessaire' },
-      ],
-    },
-  },
-  {
-    id: 'eurocodes',
-    title: 'Calculs Eurocodes',
-    description: 'Dimensionnement selon les normes européennes en vigueur',
-    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=600&fit=crop',
-    details: {
-      overview: 'Calculs de structure conformes aux Eurocodes',
-      features: [
-        'Eurocode 2 (Béton)',
-        'Eurocode 3 (Acier)',
-        'Eurocode 8 (Sismique)',
-        'Notes de calcul détaillées',
-      ],
-      faqs: [
-        { question: 'Délai pour une note de calcul ?', answer: '1-2 semaines' },
-        { question: 'Livrez-vous les fichiers sources ?', answer: 'Oui, sur demande' },
+      deliverables: [
+        "Rapport d'audit structural détaillé avec préconisations de travaux chiffrées.",
       ],
     },
   },
 ];
+
+/** Assistance à la maîtrise d'ouvrage — présentée en encart sur la page Services. */
+export const amoService = {
+  title: "Assistance à la maîtrise d'ouvrage (AMO) & suivi de chantier",
+  points: [
+    'Vérification de la conformité des travaux de structure sur le terrain.',
+    'Conseil et optimisation technico-financière des projets de construction.',
+  ],
+};
 
 // Projects gallery
 export const projects = [

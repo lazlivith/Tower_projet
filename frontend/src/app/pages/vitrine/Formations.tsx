@@ -1,9 +1,8 @@
-import { useNavigate, Link } from 'react-router';
+import { Link } from 'react-router';
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ArrowUpRight } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
 import { useReveal } from '../../hooks/useReveal';
 
 interface Course {
@@ -14,14 +13,13 @@ interface Course {
   level?: string;
   durationHours?: number;
   imageUrl?: string | null;
+  priceLabel?: string | null;
 }
 const PLACEHOLDER = 'https://placehold.co/1200x900/17160f/faf9f6?text=Formation';
 
 export default function Formations() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const { user } = useAuth();
 
   useEffect(() => {
     api.get('/courses')
@@ -31,11 +29,6 @@ export default function Formations() {
   }, []);
 
   useReveal([courses]);
-
-  const enroll = (courseId: string) => {
-    if (!user) navigate('/learn/login', { state: { returnUrl: `/payment/${courseId}` } });
-    else navigate(`/payment/${courseId}`);
-  };
 
   return (
     <div>
@@ -63,7 +56,7 @@ export default function Formations() {
         ) : (
           <div className="grid gap-x-8 gap-y-16 md:grid-cols-2">
             {courses.map((c, i) => (
-              <article key={c.id} className={`fade-up ${i % 3 === 0 ? 'md:col-span-2 md:grid md:grid-cols-2 md:gap-8 md:items-center' : ''}`}>
+              <Link to={`/formations/${c.id}`} key={c.id} className={`fade-up group block ${i % 3 === 0 ? 'md:col-span-2 md:grid md:grid-cols-2 md:gap-8 md:items-center' : ''}`}>
                 <div className={`reveal-img w-full bg-[color:var(--color-line)] ${i % 3 === 0 ? 'aspect-[4/3]' : 'aspect-[16/10]'}`}>
                   <img
                     src={toAbsoluteUrl(c.imageUrl) || PLACEHOLDER}
@@ -76,18 +69,16 @@ export default function Formations() {
                   <div className="text-[12px] uppercase tracking-[0.16em] text-[color:var(--color-ink-soft)]">
                     {c.level || 'Tous niveaux'}{c.durationHours ? ` · ${c.durationHours} h` : ''}
                   </div>
-                  <h2 className="mt-3 text-2xl sm:text-3xl">{c.title}</h2>
+                  <h2 className="mt-3 flex items-center gap-2 text-2xl sm:text-3xl">
+                    {c.title}
+                    <ArrowUpRight className="w-5 h-5 opacity-0 transition-opacity group-hover:opacity-100" />
+                  </h2>
                   <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">{c.description}</p>
-                  <div className="mt-6 flex items-center gap-6">
-                    <span className="font-[family-name:var(--font-display)] text-lg">
-                      {Number(c.price)?.toLocaleString('fr-FR')} DH
-                    </span>
-                    <button onClick={() => enroll(c.id)} className="arrow-link text-[color:var(--color-ink)]">
-                      S'inscrire <ArrowUpRight className="w-4 h-4" />
-                    </button>
+                  <div className="mt-6 font-[family-name:var(--font-display)] text-lg">
+                    {c.priceLabel || `${Number(c.price)?.toLocaleString('fr-FR')} MAD`}
                   </div>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         )}

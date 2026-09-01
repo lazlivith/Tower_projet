@@ -19,7 +19,10 @@ const QUOTE_STATUSES = ['PENDING', 'ACCEPTED', 'CONTACTED', 'REJECTED'];
  */
 export const createCourse = async (req, res) => {
   try {
-    const { title, description, price, imageUrl, level, durationHours, classroomName } = req.body;
+    const {
+      title, description, price, imageUrl, level, durationHours, classroomName,
+      audience, prerequisites, format, priceLabel, objectives, syllabus,
+    } = req.body;
 
     const result = await prisma.$transaction(async (tx) => {
       const course = await tx.course.create({
@@ -30,6 +33,12 @@ export const createCourse = async (req, res) => {
           imageUrl: imageUrl || null,
           level: level || undefined,
           durationHours: durationHours ?? undefined,
+          audience: clean(audience),
+          prerequisites: clean(prerequisites),
+          format: clean(format),
+          priceLabel: clean(priceLabel),
+          objectives: objectives?.length ? objectives : undefined,
+          syllabus: syllabus?.length ? syllabus : undefined,
         },
       });
 
@@ -160,7 +169,7 @@ export const deletePublication = async (req, res) => {
 // ==========================================
 export const createProject = async (req, res) => {
   try {
-    const { title, description, category, imageUrl, status, isPublished } = req.body;
+    const { title, description, category, imageUrl, status, isPublished, location, surface, missions, challenge, solution } = req.body;
     const project = await prisma.project.create({
       data: {
         title,
@@ -169,6 +178,11 @@ export const createProject = async (req, res) => {
         imageUrl: clean(imageUrl),
         status: status || 'COMPLETED',
         isPublished: isPublished ?? false,
+        location: clean(location),
+        surface: clean(surface),
+        missions: clean(missions),
+        challenge: clean(challenge),
+        solution: clean(solution),
       },
     });
     invalidatePublicCache('Project', 'CREATE');
@@ -181,7 +195,7 @@ export const createProject = async (req, res) => {
 
 export const updateProject = async (req, res) => {
   try {
-    const { title, description, category, imageUrl, status, isPublished } = req.body;
+    const { title, description, category, imageUrl, status, isPublished, location, surface, missions, challenge, solution } = req.body;
     const project = await prisma.project.update({
       where: { id: req.params.id },
       data: {
@@ -191,6 +205,11 @@ export const updateProject = async (req, res) => {
         imageUrl: clean(imageUrl),
         ...(status ? { status } : {}),
         ...(isPublished !== undefined ? { isPublished } : {}),
+        location: clean(location),
+        surface: clean(surface),
+        missions: clean(missions),
+        challenge: clean(challenge),
+        solution: clean(solution),
       },
     });
     invalidatePublicCache('Project', 'UPDATE');

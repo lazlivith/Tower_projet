@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { ArrowUpRight } from 'lucide-react';
-import { services } from '../../data/mockData';
+import { services, amoService } from '../../data/mockData';
 import { useReveal } from '../../hooks/useReveal';
 
 export default function Services() {
@@ -47,11 +47,26 @@ export default function Services() {
         ))}
       </section>
 
+      {/* AMO — encart */}
+      <section className="bg-[color:var(--color-paper-2)] py-20 lg:py-28">
+        <div className="mx-auto grid max-w-[1400px] gap-10 px-5 sm:px-8 lg:grid-cols-12 lg:px-12">
+          <div className="lg:col-span-4">
+            <p className="eyebrow">Accompagnement</p>
+            <h2 className="mt-3 text-2xl sm:text-4xl">{amoService.title}</h2>
+          </div>
+          <ul className="fade-up lg:col-span-8">
+            {amoService.points.map((p) => (
+              <li key={p} className="border-t border-[color:var(--color-line)] py-6 text-[15.5px] leading-relaxed first:border-t-0">{p}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       <section className="bg-[color:var(--color-ink)] text-[color:var(--color-paper)]">
         <div className="mx-auto max-w-[1400px] px-5 py-24 sm:px-8 lg:px-12">
-          <h2 className="max-w-2xl text-3xl sm:text-5xl">Un besoin spécifique ? Décrivez-le-nous.</h2>
+          <h2 className="max-w-2xl text-3xl sm:text-5xl">Un besoin spécifique&nbsp;? Décrivez-le-nous.</h2>
           <Link to="/quote" className="arrow-link mt-8 inline-flex text-[color:var(--color-paper)]">
-            Demander un devis <ArrowUpRight className="w-4 h-4" />
+            Demander une étude de structure <ArrowUpRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

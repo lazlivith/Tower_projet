@@ -21,4 +21,10 @@ export const createProjectSchema = z.object({
   imageUrl: optionalUrl,
   status: z.preprocess(upper, z.enum(['ONGOING', 'COMPLETED'])).optional(),
   isPublished: z.boolean().optional(),
+  // --- Étude de cas (optionnel) ---
+  location: optionalText(160),
+  surface: optionalText(80),
+  missions: optionalText(4000),
+  challenge: optionalText(4000),
+  solution: optionalText(4000),
 }).strip();

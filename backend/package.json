@@ -10,6 +10,7 @@
     "test": "vitest run",
     "seed": "node prisma/seed.js",
     "seed:content": "node prisma/seed-content.js",
+    "seed:formations": "node prisma/seed-formations.js",
     "postinstall": "prisma generate"
   },
   "engines": {

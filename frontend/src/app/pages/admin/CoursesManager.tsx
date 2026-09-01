@@ -1,9 +1,53 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, BookOpen, CheckCircle, X, Loader } from 'lucide-react';
+import { Users, Plus, BookOpen, CheckCircle, X, Loader, FileText } from 'lucide-react';
 import api from '../../services/api';
 
 type Instructor = { id: string; nom: string; email: string };
-type Course = { id: string; title: string; price: number; level: string; durationHours: number; imageUrl?: string };
+type Course = {
+  id: string; title: string; description?: string; price: number; level: string; durationHours: number; imageUrl?: string;
+  audience?: string | null; prerequisites?: string | null; format?: string | null; priceLabel?: string | null;
+  objectives?: string[] | null;
+};
+
+const emptyForm = {
+  title: '', description: '', price: '', classroomName: '', imageUrl: '', level: 'Débutant', durationHours: '',
+  audience: '', prerequisites: '', format: '', priceLabel: '', objectives: '',
+};
+
+type Form = typeof emptyForm;
+
+function FicheFields({ form, set }: { form: Form; set: (patch: Partial<Form>) => void }) {
+  const cls = 'w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-[#FFC107] outline-none';
+  return (
+    <>
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Public visé</label>
+        <textarea rows={2} className={cls} value={form.audience} onChange={(e) => set({ audience: e.target.value })} />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Prérequis</label>
+        <textarea rows={2} className={cls} value={form.prerequisites} onChange={(e) => set({ prerequisites: e.target.value })} />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Modalités / format</label>
+          <input className={cls} value={form.format} onChange={(e) => set({ format: e.target.value })} placeholder="35 h (5 j) — présentiel ou classe virtuelle" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Tarif (libellé affiché)</label>
+          <input className={cls} value={form.priceLabel} onChange={(e) => set({ priceLabel: e.target.value })} placeholder="6 500 MAD HT / participant" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Objectifs pédagogiques — un par ligne</label>
+        <textarea rows={4} className={cls} value={form.objectives} onChange={(e) => set({ objectives: e.target.value })} placeholder={'Maîtriser…\nModéliser…\nGénérer…'} />
+      </div>
+      <p className="text-[11px] text-gray-400">
+        Le programme détaillé jour par jour (« syllabus ») se gère via <code>npm run seed:formations</code>.
+      </p>
+    </>
+  );
+}
 
 export default function CoursesManager() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -12,8 +56,22 @@ export default function CoursesManager() {
   const [creating, setCreating] = useState(false);
   const [assignTarget, setAssignTarget] = useState<{ courseId: string; title: string } | null>(null);
   const [selectedInstructor, setSelectedInstructor] = useState('');
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', price: '', classroomName: '', imageUrl: '', level: 'Débutant', durationHours: '' });
+  const [courseForm, setCourseForm] = useState({ ...emptyForm });
+  const [editTarget, setEditTarget] = useState<Course | null>(null);
+  const [editForm, setEditForm] = useState({ ...emptyForm });
+  const [savingEdit, setSavingEdit] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const buildFicheFields = (f: typeof emptyForm) => {
+    const out: Record<string, unknown> = {};
+    if (f.audience.trim()) out.audience = f.audience.trim();
+    if (f.prerequisites.trim()) out.prerequisites = f.prerequisites.trim();
+    if (f.format.trim()) out.format = f.format.trim();
+    if (f.priceLabel.trim()) out.priceLabel = f.priceLabel.trim();
+    const objs = f.objectives.split('\n').map((s) => s.trim()).filter(Boolean);
+    if (objs.length) out.objectives = objs;
+    return out;
+  };
 
   const showFeedback = (type: 'success' | 'error', message: string) => {
     setFeedback({ type, message });
@@ -52,15 +110,53 @@ export default function CoursesManager() {
       if (courseForm.classroomName.trim()) payload.classroomName = courseForm.classroomName.trim();
       if (courseForm.imageUrl.trim()) payload.imageUrl = courseForm.imageUrl.trim();
       if (courseForm.durationHours) payload.durationHours = Number(courseForm.durationHours);
+      Object.assign(payload, buildFicheFields(courseForm));
 
       await api.post('/admin/courses', payload);
       showFeedback('success', `Formation "${courseForm.title}" créée avec succès !`);
-      setCourseForm({ title: '', description: '', price: '', classroomName: '', imageUrl: '', level: 'Débutant', durationHours: '' });
+      setCourseForm({ ...emptyForm });
       fetchData();
     } catch (err: any) {
       showFeedback('error', err.response?.data?.message || 'Erreur lors de la création.');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const openEdit = (c: Course) => {
+    setEditTarget(c);
+    setEditForm({
+      ...emptyForm,
+      title: c.title, description: c.description || '', price: String(c.price ?? ''),
+      imageUrl: c.imageUrl || '', level: c.level || 'Débutant', durationHours: String(c.durationHours ?? ''),
+      audience: c.audience || '', prerequisites: c.prerequisites || '', format: c.format || '',
+      priceLabel: c.priceLabel || '',
+      objectives: Array.isArray(c.objectives) ? c.objectives.join('\n') : '',
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setSavingEdit(true);
+    try {
+      const payload: Record<string, unknown> = {
+        title: editForm.title,
+        description: editForm.description,
+        price: Number(editForm.price),
+        level: editForm.level,
+        imageUrl: editForm.imageUrl.trim(),
+        ...buildFicheFields(editForm),
+      };
+      if (editForm.durationHours) payload.durationHours = Number(editForm.durationHours);
+      await api.put(`/admin/courses/${editTarget.id}`, payload);
+      showFeedback('success', 'Formation mise à jour.');
+      setEditTarget(null);
+      fetchData();
+    } catch (err: any) {
+      showFeedback('error', err.response?.data?.message || err.response?.data?.errors?.[0]?.message || 'Erreur lors de la mise à jour.');
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -89,6 +185,58 @@ export default function CoursesManager() {
         <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-white font-medium flex items-center gap-3 transition-all ${feedback.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
           {feedback.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <X className="w-5 h-5" />}
           {feedback.message}
+        </div>
+      )}
+
+      {/* Modal édition formation */}
+      {editTarget && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-start justify-center p-4 overflow-y-auto">
+          <form onSubmit={handleSaveEdit} className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl my-8 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-800">Éditer la formation</h3>
+              <button type="button" onClick={() => setEditTarget(null)}><X className="w-5 h-5 text-gray-400 hover:text-gray-700" /></button>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Titre *</label>
+              <input required className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-[#FFC107] outline-none" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description *</label>
+              <textarea required rows={3} className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-[#FFC107] outline-none resize-none" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Prix (DH) *</label>
+                <input required type="number" min="0" className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-[#FFC107] outline-none" value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Durée (h)</label>
+                <input type="number" min="0" className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-[#FFC107] outline-none" value={editForm.durationHours} onChange={(e) => setEditForm({ ...editForm, durationHours: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Niveau</label>
+                <select className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-[#FFC107] outline-none" value={editForm.level} onChange={(e) => setEditForm({ ...editForm, level: e.target.value })}>
+                  <option value="Débutant">Débutant</option>
+                  <option value="Intermédiaire">Intermédiaire</option>
+                  <option value="Avancé">Avancé</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Image (URL)</label>
+              <input type="url" className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-[#FFC107] outline-none" value={editForm.imageUrl} onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })} />
+            </div>
+            <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+              <div className="text-sm font-semibold text-gray-700">Fiche pédagogique vitrine</div>
+              <FicheFields form={editForm} set={(patch) => setEditForm({ ...editForm, ...patch })} />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button type="button" onClick={() => setEditTarget(null)} className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 font-medium">Annuler</button>
+              <button type="submit" disabled={savingEdit} className="flex-1 px-4 py-2.5 bg-[#FFC107] text-[#1A1A2E] rounded-xl font-bold hover:bg-yellow-400 disabled:opacity-60 flex items-center justify-center gap-2">
+                {savingEdit ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Enregistrer
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
@@ -162,6 +310,14 @@ export default function CoursesManager() {
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Image (URL)</label>
               <input type="url" className="w-full border border-gray-200 rounded-xl p-3 focus:ring-2 focus:ring-[#FFC107] outline-none" value={courseForm.imageUrl} onChange={e => setCourseForm({ ...courseForm, imageUrl: e.target.value })} placeholder="https://..." />
             </div>
+
+            <details className="rounded-xl border border-gray-200 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-gray-700">Fiche pédagogique vitrine (optionnel)</summary>
+              <div className="mt-4 space-y-3">
+                <FicheFields form={courseForm} set={(patch) => setCourseForm({ ...courseForm, ...patch })} />
+              </div>
+            </details>
+
             <button type="submit" disabled={creating} className="w-full bg-[#FFC107] text-[#1A1A2E] font-bold py-3.5 rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
               {creating ? <Loader className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
               {creating ? 'Création en cours...' : 'Créer la formation'}
@@ -200,12 +356,20 @@ export default function CoursesManager() {
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setAssignTarget({ courseId: course.id, title: course.title })}
-                  className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-semibold"
-                >
-                  <Users className="w-4 h-4" /> Assigner un instructeur
-                </button>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => openEdit(course)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-semibold"
+                  >
+                    <FileText className="w-4 h-4" /> Éditer la fiche
+                  </button>
+                  <button
+                    onClick={() => setAssignTarget({ courseId: course.id, title: course.title })}
+                    className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-semibold"
+                  >
+                    <Users className="w-4 h-4" /> Instructeur
+                  </button>
+                </div>
               </div>
             ))}
           </div>

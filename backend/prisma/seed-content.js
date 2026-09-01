@@ -23,65 +23,56 @@ const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 // ─────────────────────────────────────────────────────────────
 const PUBLICATIONS = [
   {
-    title: 'Le BIM, socle de la maîtrise structurelle',
-    category: 'BIM',
-    excerpt: "Pourquoi la maquette numérique est aujourd'hui indissociable d'une étude de structure fiable.",
+    title: "Comment optimiser le dimensionnement d'un voile en béton armé selon l'Eurocode 2 ?",
+    category: 'Technique',
+    excerpt: "Élancement, chaînages, taux d'armatures minimal : la méthode pour un voile juste dimensionné, ni sur- ni sous-armé.",
     imageUrl: '',
     status: 'PUBLISHED',
     content:
-      "Le Building Information Modeling (BIM) dépasse largement la simple représentation 3D. " +
-      "Pour l'ingénierie structurelle, il constitue une base de données unique et coordonnée : géométrie, " +
-      "matériaux, charges, phasage de construction.\n\n" +
-      "Chez Tower Structure, chaque projet est modélisé en BIM dès la phase d'esquisse. Cela permet de " +
-      "détecter les incohérences entre lots (structure, fluides, architecture) avant le chantier, de fiabiliser " +
-      "les métrés et de produire des notes de calcul traçables.\n\n" +
-      "Les gains constatés : réduction des reprises d'étude, meilleure anticipation des délais, et un dossier " +
-      "d'exécution directement exploitable par l'entreprise.",
+      "Le voile en béton armé est un élément à la fois porteur (charges verticales) et de contreventement " +
+      "(efforts horizontaux, séisme). Un mauvais dimensionnement se traduit soit par un surcoût d'acier, soit " +
+      "par un défaut de résistance ou de ductilité.\n\n" +
+      "1. Vérifier l'élancement — la longueur de flambement conditionne la prise en compte des effets du second ordre (EN 1992-1-1, §5.8).\n\n" +
+      "2. Distinguer voile courant et voile de grande hauteur — la répartition des contraintes et le ferraillage minimal diffèrent.\n\n" +
+      "3. Respecter les taux d'armatures minimaux et maximaux (verticales et horizontales) et les dispositions de chaînage aux extrémités.\n\n" +
+      "4. En zone sismique, appliquer les prescriptions de l'Eurocode 8 : zones critiques, confinement des about de voile, vérification de l'effort tranchant majoré.\n\n" +
+      "Notre pratique : un modèle éléments finis sous Robot RSA pour la descente de charges réelle, puis une vérification manuelle des sections critiques. Résultat : un ratio d'acier maîtrisé et une note de calcul lisible par le bureau de contrôle.",
   },
   {
-    title: 'Eurocodes : les points de vigilance en zone sismique',
-    category: 'Eurocodes',
-    excerpt: "EN 1998 (Eurocode 8) — check-list des paramètres qui conditionnent le dimensionnement.",
+    title: 'Les 5 erreurs à éviter lors du passage de Robot RSA à Revit Structure',
+    category: 'BIM & Innovation',
+    excerpt: "Unités, axes, relâchements, familles, mapping des sections : l'interopérabilité RSA ↔ Revit sans mauvaise surprise.",
     imageUrl: '',
     status: 'PUBLISHED',
     content:
-      "Le dimensionnement parasismique selon l'Eurocode 8 repose sur quelques choix structurants effectués " +
-      "très tôt dans le projet :\n\n" +
-      "• Classe de sol et zone sismique — ils fixent le spectre de réponse.\n" +
-      "• Coefficient de comportement (q) — lié au système de contreventement et à la ductilité visée.\n" +
-      "• Régularité en plan et en élévation — une irrégularité impose une analyse modale spectrale complète.\n" +
-      "• Dispositions constructives (chaînages, confinement des nœuds) — souvent sous-estimées en phase APS.\n\n" +
-      "Un pré-dimensionnement rigoureux sur ces points évite des reprises lourdes en phase PRO.",
+      "L'aller-retour entre l'outil de calcul (Robot Structural Analysis) et la maquette (Revit Structure) fait " +
+      "gagner un temps considérable — à condition d'éviter quelques pièges classiques.\n\n" +
+      "1. Systèmes d'unités et de coordonnées non alignés — recaler l'origine et le nord de projet avant tout export.\n\n" +
+      "2. Relâchements et conditions d'appui perdus au transfert — les revérifier systématiquement côté RSA après import.\n\n" +
+      "3. Familles Revit non structurelles utilisées comme éléments porteurs — le calcul les ignore ou les interprète mal.\n\n" +
+      "4. Mapping des sections et matériaux incomplet — créer une bibliothèque de correspondances maintenue projet après projet.\n\n" +
+      "5. Modifier la géométrie des deux côtés en parallèle — définir un sens de synchronisation unique (le modèle analytique fait foi).\n\n" +
+      "Ces points sont traités en pratique dans notre formation Revit Structure (jour 5, interopérabilité).",
   },
   {
-    title: 'Diagnostic structurel : 5 signaux à ne jamais ignorer',
-    category: 'Diagnostic',
-    excerpt: 'Fissures, flèches, corrosion, tassements, vibrations — comment prioriser une intervention.',
+    title: 'Gestion des pathologies du béton : causes, diagnostics et solutions de renforcement',
+    category: 'Chantier',
+    excerpt: 'Carbonatation, chlorures, alcali-réaction : identifier le mécanisme avant de choisir le confortement.',
     imageUrl: '',
     status: 'PUBLISHED',
     content:
-      "Un diagnostic structurel commence par une inspection visuelle méthodique. Cinq familles de désordres " +
-      "doivent déclencher une investigation approfondie :\n\n" +
-      "1. Fissures évolutives ou traversantes, surtout à 45° ou au droit des appuis.\n" +
-      "2. Flèches visibles de planchers ou de poutres au-delà des tolérances (L/250 à L/500 selon usage).\n" +
-      "3. Corrosion des armatures avec éclatement du béton d'enrobage.\n" +
-      "4. Tassements différentiels — portes qui coincent, décollements de cloisons.\n" +
-      "5. Vibrations perceptibles sous usage normal (planchers de bureaux, passerelles).\n\n" +
-      "Tower Structure établit un rapport hiérarchisé (urgence, cause probable, solution de confortement).",
-  },
-  {
-    title: 'Renforcement de structures existantes : quelles techniques ?',
-    category: 'Diagnostic',
-    excerpt: 'Chemisage béton, lamelles composites, précontrainte additionnelle — critères de choix.',
-    imageUrl: '',
-    status: 'DRAFT',
-    content:
-      "Le confortement d'un ouvrage existant se choisit selon la nature du déficit (flexion, effort tranchant, " +
-      "poinçonnement), les contraintes d'exploitation et le budget.\n\n" +
-      "• Chemisage béton armé : robuste, augmente l'inertie, mais réduit les gabarits et impose un arrêt d'usage.\n" +
-      "• Lamelles / tissus composites (PRFC) : mise en œuvre rapide, faible surépaisseur, adaptée à la flexion.\n" +
-      "• Précontrainte additionnelle extérieure : efficace pour reprendre des flèches et rouvrir des marges.\n\n" +
-      "Article en cours de rédaction — sera complété par des retours de chantier.",
+      "Avant de renforcer, il faut comprendre. Les pathologies du béton armé relèvent le plus souvent de trois " +
+      "mécanismes.\n\n" +
+      "• Corrosion par carbonatation — le front de carbonatation atteint les armatures, l'acier gonfle, le béton " +
+      "d'enrobage éclate. Fréquent sur ouvrages anciens peu enrobés.\n\n" +
+      "• Corrosion par les chlorures — milieux marins ou sels de déverglaçage ; corrosion localisée (piqûres), plus " +
+      "insidieuse car peu visible en surface.\n\n" +
+      "• Réactions internes (alcali-réaction, ettringite différée) — faïençage, gonflement, perte de cohésion.\n\n" +
+      "Le diagnostic combine relevé visuel, mesures (enrobage, potentiel de corrosion, carottages) et calcul de la " +
+      "capacité portante résiduelle.\n\n" +
+      "Solutions de confortement selon le cas : passivation et réparation locale, protection cathodique, " +
+      "chemisage béton, lamelles ou tissus carbone (PRFC), ajout de profilés acier. Chaque solution fait l'objet " +
+      "d'une note de calcul et d'un chiffrage.",
   },
 ];
 
@@ -92,64 +83,63 @@ const PUBLICATIONS = [
 // ─────────────────────────────────────────────────────────────
 const PROJETS = [
   {
-    title: 'Résidence Al Andalous — Rabat',
-    category: 'Résidentiel',
+    title: 'Résidence tertiaire R+10 — Casablanca',
+    category: 'Résidentiel & tertiaire',
     status: 'COMPLETED',
     isPublished: true,
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1400&q=80',
+    location: 'Casablanca',
+    surface: '12 000 m²',
     description:
-      "Immeuble R+8 en béton armé, 42 logements. Étude complète de structure, note de calcul Eurocode 2 et 8, " +
-      "plans de coffrage et de ferraillage, assistance à la consultation des entreprises.",
+      "Immeuble mixte R+10 avec sous-sol. Étude de structure béton armé (EXE) et coordination BIM au niveau LOD 350.",
+    missions:
+      "Étude de structure béton armé (dossier d'exécution) et coordination BIM (LOD 350) avec les lots architecture et MEP.",
+    challenge:
+      "Sous-sol en nappe phréatique et portées libres de 9 mètres au rez-de-chaussée, imposant des retombées de poutres incompatibles avec les hauteurs sous plafond.",
+    solution:
+      "Conception d'un radier général étanche et d'un plancher dalle alvéolaire pour supprimer les retombées de poutres. Une ré-analyse fine sous Robot RSA a permis une économie de 12 % sur le ratio d'acier.",
   },
   {
-    title: 'Centre commercial Marina — Casablanca',
-    category: 'Commercial',
+    title: 'Halle industrielle en charpente métallique',
+    category: 'Ouvrages industriels',
     status: 'COMPLETED',
     isPublished: true,
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1587613864521-9ef8dfe617cc?auto=format&fit=crop&w=1400&q=80',
+    location: 'Zone industrielle',
+    surface: '6 500 m²',
     description:
-      "Charpente métallique de grande portée (18 m) sur 12 000 m² de plancher, mezzanines mixtes acier-béton, " +
-      "étude de stabilité au feu et modélisation BIM complète.",
+      "Halle de production à grande portée en charpente métallique. Conception, dimensionnement EC3 et plans d'assemblage.",
+    missions: "Conception de la charpente métallique, dimensionnement Eurocode 3, plans d'assemblage.",
+    challenge: 'Portée libre de 24 m sans poteau intermédiaire, pont roulant en toiture et contreventement en zone sismique.',
+    solution: 'Fermes treillis à âme triangulée, palées de stabilité optimisées et assemblages boulonnés préfabriqués pour un montage rapide.',
   },
   {
-    title: 'Plateforme logistique — Zone franche de Tanger',
-    category: 'Industriel',
+    title: 'Réhabilitation & extension — surélévation de 2 niveaux',
+    category: 'Réhabilitation & extension',
     status: 'COMPLETED',
     isPublished: true,
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1400&q=80',
+    location: 'Centre-ville',
+    surface: '2 800 m²',
     description:
-      "Bâtiment industriel 8 000 m², structure poteaux-poutres préfabriqués, dallage industriel armé fibres, " +
-      "fondations sur pieux compte tenu du sol compressible.",
+      "Renforcement d'une structure existante en béton armé avec ajout de deux niveaux, sans interruption d'usage.",
+    missions: "Diagnostic structural, calcul de capacité portante résiduelle, ingénierie de confortement et étude de la surélévation.",
+    challenge: "Fondations et poteaux existants sous-dimensionnés pour deux niveaux supplémentaires ; travaux en site occupé.",
+    solution: 'Chemisage béton des poteaux du RDC, reprise en sous-œuvre des semelles et ossature métallique légère pour les niveaux ajoutés.',
   },
   {
-    title: "Pont sur l'Oued Bouregreg",
-    category: 'Infrastructure',
+    title: 'Complexes immobiliers — synthèse BIM & calcul parasismique',
+    category: 'Résidentiel & tertiaire',
     status: 'ONGOING',
     isPublished: true,
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80',
+    location: 'Grand Casablanca',
+    surface: '—',
     description:
-      "Assistance technique au maître d'ouvrage et contrôle d'exécution d'un ouvrage d'art en béton précontraint. " +
-      "Chantier en cours — suivi des phases de bétonnage et de mise en tension.",
-  },
-  {
-    title: 'Confortement parasismique — Hôpital régional',
-    category: 'Santé',
-    status: 'ONGOING',
-    isPublished: true,
-    imageUrl: '',
-    description:
-      "Renforcement d'un bâtiment hospitalier des années 1980 : voiles de contreventement additionnels, " +
-      "chemisage de poteaux, reprise des nœuds poteau-poutre. Travaux réalisés en site occupé, par tranches.",
-  },
-  {
-    title: 'Tour tertiaire Casa Finance City',
-    category: 'Commercial',
-    status: 'ONGOING',
-    isPublished: true,
-    imageUrl: '',
-    description:
-      "Immeuble de bureaux R+15, noyau béton et planchers post-tendus. Étude de structure, analyse dynamique " +
-      "au vent et au séisme, coordination BIM avec les lots techniques.",
+      "Deux ensembles immobiliers en phase DCE/EXE : synthèse BIM inter-lots et calculs parasismiques (EC8 / RPS 2000).",
+    missions: 'Synthèse BIM inter-lots, calculs parasismiques et production des dossiers EXE en phase DCE.',
+    challenge: 'Coordination multi-bâtiments avec des trames structurelles hétérogènes et un planning EXE tendu.',
+    solution: 'Maquette fédérée mise à jour hebdomadairement, matrice de clashs partagée et note de calcul par bâtiment.',
   },
 ];
 
@@ -177,6 +167,11 @@ async function upsertProject(p) {
     imageUrl: p.imageUrl || null,
     status: p.status || 'COMPLETED',
     isPublished: p.isPublished ?? true,
+    location: p.location || null,
+    surface: p.surface || null,
+    missions: p.missions || null,
+    challenge: p.challenge || null,
+    solution: p.solution || null,
   };
   return existing
     ? prisma.project.update({ where: { id: existing.id }, data })
