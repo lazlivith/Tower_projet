@@ -14,6 +14,7 @@ import {
   Globe,
   PanelLeftClose,
   PanelLeftOpen,
+  Wrench,
 } from 'lucide-react';
 
 interface Props {
@@ -50,6 +51,7 @@ const GROUPS: { title: string; items: { label: string; to: string; icon: any; en
     items: [
       { label: 'Publications', to: '/learn/admin/publications', icon: Newspaper },
       { label: 'Projets', to: '/learn/admin/projects', icon: ImageIcon },
+      { label: 'Services', to: '/learn/admin/services', icon: Wrench },
       { label: 'Devis', to: '/learn/admin/quotes', icon: FileSignature },
     ],
   },

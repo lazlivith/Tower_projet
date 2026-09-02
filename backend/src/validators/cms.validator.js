@@ -28,3 +28,23 @@ export const createProjectSchema = z.object({
   challenge: optionalText(4000),
   solution: optionalText(4000),
 }).strip();
+
+const slugify = (v) =>
+  String(v ?? '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+
+export const createServiceSchema = z.object({
+  slug: z.preprocess((v) => (v ? slugify(v) : v), z.string().min(2).max(80)).optional(),
+  kind: z.preprocess(upper, z.enum(['SERVICE', 'AMO'])).optional(),
+  title: z.string().min(3, 'Le titre doit faire au moins 3 caractères.').max(200),
+  summary: z.string().min(3, 'Le résumé est requis.').max(2000),
+  imageUrl: optionalUrl,
+  objective: optionalText(4000),
+  scope: z.array(z.string().min(1)).optional().or(z.null()),
+  deliverables: z.array(z.string().min(1)).optional().or(z.null()),
+  order: z.number().int().optional(),
+  isPublished: z.boolean().optional(),
+}).strip();

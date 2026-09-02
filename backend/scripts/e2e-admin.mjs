@@ -211,6 +211,76 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     created.projId = null;
   });
 
+  // ---- 3b. Services (page Services vitrine + menu) ----
+  sec('Services  →  page « Services » + encart AMO');
+  await check('POST /cms/services (prestation, masquée) → 201', async () => {
+    const r = await A.post('/api/cms/services', {
+      title: 'E2E — Service de test', summary: 'Résumé de test suffisamment long pour la validation.',
+      kind: 'SERVICE', isPublished: false,
+      objective: 'Objectif de test.', scope: ['Point de périmètre 1', 'Point 2'], deliverables: ['Livrable 1'],
+    });
+    eq(r.status, 201, 'HTTP');
+    created.serviceId = r.body.service?.id;
+    created.serviceSlug = r.body.service?.slug;
+    assert(created.serviceId, 'id manquant');
+    assert(created.serviceSlug === 'e2e-service-de-test', 'slug auto-dérivé du titre');
+  });
+  await check('POST /cms/services (AMO) → 201', async () => {
+    const r = await A.post('/api/cms/services', {
+      title: 'E2E — AMO de test', summary: 'Résumé AMO de test suffisamment long.',
+      kind: 'AMO', isPublished: true, scope: ['Vérification conformité', 'Optimisation'],
+    });
+    eq(r.status, 201, 'HTTP');
+    created.amoId = r.body.service?.id;
+    assert(created.amoId, 'id manquant');
+  });
+  await check('Vitrine NE montre PAS le service masqué + AMO bien séparé', async () => {
+    const r = await api().get('/api/cms/services');
+    assert(Array.isArray(r.body.services), 'services[] manquant');
+    assert(!r.body.services.some((s) => s.id === created.serviceId), 'service masqué visible publiquement !');
+    assert(r.body.amo && r.body.amo.kind === 'AMO', 'encart AMO absent');
+    assert(r.body.services.every((s) => s.kind === 'SERVICE'), "l'AMO ne doit pas être dans services[]");
+  });
+  await check('PATCH toggle-publish → visible sur la vitrine', async () => {
+    const r = await A.patch(`/api/cms/services/${created.serviceId}/toggle-publish`);
+    eq(r.status, 200, 'HTTP');
+    const g = await api().get('/api/cms/services');
+    assert(g.body.services.some((s) => s.id === created.serviceId), 'service publié absent de la vitrine');
+  });
+  await check('GET /cms/services/:slug (détail public) → 200 + champs à plat', async () => {
+    const r = await api().get(`/api/cms/services/${created.serviceSlug}`);
+    eq(r.status, 200, 'HTTP');
+    eq(r.body.slug, created.serviceSlug, 'slug');
+    assert(Array.isArray(r.body.scope) && r.body.scope.length === 2, 'scope[]');
+    assert(Array.isArray(r.body.deliverables) && r.body.deliverables.length === 1, 'deliverables[]');
+  });
+  await check('PATCH /cms/services/reorder → ordre appliqué', async () => {
+    const r = await A.patch('/api/cms/services/reorder', { ids: [created.amoId, created.serviceId] });
+    eq(r.status, 200, 'HTTP');
+    const all = await A.get('/api/cms/admin/services');
+    const a = all.body.find((s) => s.id === created.amoId);
+    const b = all.body.find((s) => s.id === created.serviceId);
+    assert(a.order < b.order, 'ordre non répercuté');
+    const pub = await api().get('/api/cms/services');
+    eq(pub.body.amo.id, created.amoId, 'AMO publique = celle remontée en tête');
+  });
+  await check('PUT édition (titre) répercutée sur la vitrine', async () => {
+    const r = await A.put(`/api/cms/services/${created.serviceId}`, {
+      title: 'E2E — Service MODIFIÉ', summary: 'Résumé de test suffisamment long pour la validation.',
+      kind: 'SERVICE', isPublished: true, scope: ['Point 1'], deliverables: [],
+    });
+    eq(r.status, 200, 'HTTP');
+    const g = await api().get(`/api/cms/services/${created.serviceSlug}`);
+    eq(g.body.title, 'E2E — Service MODIFIÉ', 'titre vitrine');
+  });
+  await check('DELETE /cms/services/:id (x2) → disparaissent de la vitrine', async () => {
+    eq((await A.del(`/api/cms/services/${created.serviceId}`)).status, 200, 'HTTP service');
+    eq((await A.del(`/api/cms/services/${created.amoId}`)).status, 200, 'HTTP amo');
+    const g = await api().get(`/api/cms/services/${created.serviceSlug}`);
+    eq(g.status, 404, 'HTTP détail après suppression');
+    created.serviceId = null; created.amoId = null;
+  });
+
   // ---- 4. Formations (page Formations vitrine) ----
   sec('Formations  →  page Formations du site');
   await check('POST /admin/courses (+ fiche pédagogique) → 201', async () => {

@@ -298,3 +298,153 @@ export const deleteQuote = async (req, res) => {
     return res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
+
+// ==========================================
+// SERVICES (vitrine) CRUD
+// ==========================================
+const slugify = (v) =>
+  String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+
+const cleanService = (s) => ({
+  id: s.id,
+  slug: s.slug,
+  kind: s.kind,
+  title: s.title,
+  summary: s.summary,
+  imageUrl: s.imageUrl,
+  objective: s.objective,
+  scope: Array.isArray(s.scope) ? s.scope : [],
+  deliverables: Array.isArray(s.deliverables) ? s.deliverables : [],
+  order: s.order,
+  isPublished: s.isPublished,
+});
+
+/** PUBLIC — services publiés : { services: [SERVICE], amo: AMO|null }. */
+export const getPublishedServices = async (req, res) => {
+  try {
+    const rows = await prisma.service.findMany({
+      where: { isPublished: true },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+    });
+    const all = rows.map(cleanService);
+    return res.status(200).json({
+      services: all.filter((s) => s.kind === 'SERVICE'),
+      amo: all.find((s) => s.kind === 'AMO') || null,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/** PUBLIC — un service publié par son slug. */
+export const getServiceBySlug = async (req, res) => {
+  try {
+    const s = await prisma.service.findFirst({ where: { slug: req.params.slug, isPublished: true } });
+    if (!s) return res.status(404).json({ message: 'Service introuvable.' });
+    return res.status(200).json(cleanService(s));
+  } catch (error) {
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/** ADMIN — tous les services (non publiés inclus). */
+export const getAllServices = async (req, res) => {
+  try {
+    const rows = await prisma.service.findMany({ orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] });
+    return res.status(200).json(rows.map(cleanService));
+  } catch (error) {
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+export const createService = async (req, res) => {
+  try {
+    const { title, summary, kind, imageUrl, objective, scope, deliverables, order, isPublished } = req.body;
+    let slug = req.body.slug || slugify(title);
+    // slug unique
+    if (await prisma.service.findUnique({ where: { slug } })) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
+
+    const last = await prisma.service.aggregate({ _max: { order: true } });
+    const service = await prisma.service.create({
+      data: {
+        slug,
+        kind: kind || 'SERVICE',
+        title,
+        summary,
+        imageUrl: clean(imageUrl),
+        objective: clean(objective),
+        scope: scope?.length ? scope : undefined,
+        deliverables: deliverables?.length ? deliverables : undefined,
+        order: Number.isInteger(order) ? order : (last._max.order ?? 0) + 1,
+        isPublished: isPublished ?? true,
+      },
+    });
+    invalidatePublicCache('Service', 'CREATE');
+    return res.status(201).json({ message: 'Service créé', service: cleanService(service) });
+  } catch (error) {
+    console.error('[CMS] createService:', error);
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+export const updateService = async (req, res) => {
+  try {
+    const { title, summary, kind, imageUrl, objective, scope, deliverables, order, isPublished } = req.body;
+    const data = {
+      title, summary,
+      imageUrl: clean(imageUrl),
+      objective: clean(objective),
+      scope: Array.isArray(scope) ? scope : undefined,
+      deliverables: Array.isArray(deliverables) ? deliverables : undefined,
+      ...(kind ? { kind } : {}),
+      ...(Number.isInteger(order) ? { order } : {}),
+      ...(isPublished !== undefined ? { isPublished } : {}),
+    };
+    if (req.body.slug) data.slug = slugify(req.body.slug);
+    const service = await prisma.service.update({ where: { id: req.params.id }, data });
+    invalidatePublicCache('Service', 'UPDATE');
+    return res.status(200).json({ message: 'Service mis à jour', service: cleanService(service) });
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Service introuvable.' });
+    if (error.code === 'P2002') return res.status(400).json({ message: 'Ce slug est déjà utilisé.' });
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+export const toggleServiceVisibility = async (req, res) => {
+  try {
+    const cur = await prisma.service.findUnique({ where: { id: req.params.id } });
+    if (!cur) return res.status(404).json({ message: 'Service introuvable.' });
+    const service = await prisma.service.update({ where: { id: cur.id }, data: { isPublished: !cur.isPublished } });
+    invalidatePublicCache('Service', 'TOGGLE_VISIBILITY');
+    return res.status(200).json({ message: service.isPublished ? 'Service publié' : 'Service masqué', service: cleanService(service) });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+export const reorderServices = async (req, res) => {
+  try {
+    const ids = req.body?.ids;
+    if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ message: 'ids (tableau) requis.' });
+    const known = new Set((await prisma.service.findMany({ select: { id: true } })).map((s) => s.id));
+    if (!ids.every((id) => known.has(id))) return res.status(400).json({ message: 'Identifiant de service invalide.' });
+    await prisma.$transaction(ids.map((id, i) => prisma.service.update({ where: { id }, data: { order: i + 1 } })));
+    invalidatePublicCache('Service', 'REORDER');
+    return res.status(200).json({ message: 'Ordre mis à jour.' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+export const deleteService = async (req, res) => {
+  try {
+    await prisma.service.delete({ where: { id: req.params.id } });
+    invalidatePublicCache('Service', 'DELETE');
+    return res.status(200).json({ message: 'Service supprimé' });
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Service introuvable.' });
+    return res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};

@@ -65,6 +65,11 @@ enum ProjectStatus {
   COMPLETED
 }
 
+enum ServiceKind {
+  SERVICE
+  AMO
+}
+
 // ---- TABLES (Modèles relationnels) ----
 
 model User {
@@ -436,6 +441,26 @@ model Project {
   solution  String? @db.Text // solution apportée
 
   @@map("projects")
+}
+
+/// Services vitrine (page « Services » + fiches détail) — gérés par l'admin.
+model Service {
+  id           String      @id @default(uuid()) @db.Uuid
+  slug         String      @unique @db.VarChar(80)
+  kind         ServiceKind @default(SERVICE)
+  title        String      @db.VarChar(200)
+  summary      String      @db.Text // résumé court (carte + accueil)
+  imageUrl     String?     @map("image_url") @db.VarChar(500)
+  objective    String?     @db.Text // « Objectif »
+  scope        Json? // string[] — périmètre d'action (ou points pour l'encart AMO)
+  deliverables Json? // string[] — livrables techniques
+  order        Int         @default(0)
+  isPublished  Boolean     @default(true) @map("is_published")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamp
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamp
+
+  @@index([kind, order])
+  @@map("services")
 }
 
 // ---- SÉCURITÉ AUTH ----

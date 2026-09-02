@@ -2,16 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { Menu, X, ArrowUpRight, ChevronDown, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { services } from '../../data/mockData';
+import { useServices } from '../../hooks/useServices';
 import type { VitrineTheme } from '../../hooks/useVitrineTheme';
-
-const NAV = [
-  { to: '/', label: 'Accueil' },
-  { to: '/services', label: 'Services', sub: services.map((s) => ({ to: `/services/${s.id}`, label: s.title })) },
-  { to: '/about', label: 'À propos' },
-  { to: '/formations', label: 'Formations' },
-  { to: '/blog', label: 'Blog' },
-];
 
 interface HeaderProps {
   theme?: VitrineTheme;
@@ -26,6 +18,19 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
   const [mobileServices, setMobileServices] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [atFooter, setAtFooter] = useState(false);
+  const { services } = useServices();
+
+  const NAV = [
+    { to: '/', label: 'Accueil' },
+    {
+      to: '/services',
+      label: 'Services',
+      sub: services.length ? services.map((s) => ({ to: `/services/${s.slug}`, label: s.title })) : undefined,
+    },
+    { to: '/about', label: 'À propos' },
+    { to: '/formations', label: 'Formations' },
+    { to: '/blog', label: 'Blog' },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);

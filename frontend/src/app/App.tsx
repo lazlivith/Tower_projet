@@ -68,6 +68,7 @@ import UsersManager from './pages/admin/UsersManager';
 import PaymentsManager from './pages/admin/PaymentsManager';
 import PublicationsManager from './pages/admin/PublicationsManager';
 import ProjectsManager from './pages/admin/ProjectsManager';
+import ServicesManager from './pages/admin/ServicesManager';
 import QuotesManager from './pages/admin/QuotesManager';
 
 export default function App() {
@@ -206,6 +207,7 @@ export default function App() {
             ['/learn/admin/documents', <AdminDocuments />],
             ['/learn/admin/publications', <PublicationsManager />],
             ['/learn/admin/projects', <ProjectsManager />],
+            ['/learn/admin/services', <ServicesManager />],
             ['/learn/admin/quotes', <QuotesManager />],
           ] as [string, JSX.Element][]).map(([path, el]) => (
             <Route
@@ -218,7 +220,6 @@ export default function App() {
               }
             />
           ))}
-          <Route path="/learn/admin/services" element={<Navigate to="/learn/admin/courses" replace />} />
 
           {/* 404 - Redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />

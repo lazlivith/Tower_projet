@@ -12,7 +12,8 @@
     "seed:content": "node prisma/seed-content.js",
     "seed:formations": "node prisma/seed-formations.js",
     "postinstall": "prisma generate",
-    "test:e2e": "node scripts/e2e-admin.mjs"
+    "test:e2e": "node scripts/e2e-admin.mjs",
+    "seed:services": "node prisma/seed-services.js"
   },
   "engines": {
     "node": ">=20 <23"
