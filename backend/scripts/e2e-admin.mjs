@@ -489,6 +489,19 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     const filtered = await A.get('/api/admin/documents?type=CERTIFICATE');
     assert(filtered.body.every((d) => d.type === 'CERTIFICATE'), 'filtre type inopérant');
   });
+  await check('GET /api/documents/verify/:number (public) → valide + inconnu', async () => {
+    const all = await A.get('/api/admin/documents');
+    const one = all.body[0];
+    const ok = await api().get(`/api/documents/verify/${one.number}`);
+    eq(ok.status, 200, 'HTTP');
+    eq(ok.body.valid, true, 'doit être valide');
+    eq(ok.body.number, one.number, 'n°');
+    assert(ok.body.issuedAt && ok.body.typeLabel, 'métadonnées manquantes');
+    assert(ok.body.userId === undefined && ok.body.title === undefined, 'aucune donnée personnelle ne doit fuiter');
+    const ko = await api().get('/api/documents/verify/TS-CERT-2026-XXXX');
+    eq(ko.status, 200, 'HTTP');
+    eq(ko.body.valid, false, 'référence inconnue → valid:false');
+  });
 
   // ---- 11. Espace formateur ----
   sec('Espace formateur — classes, contenu, calendrier, échanges');

@@ -16,6 +16,7 @@ import Services from './pages/vitrine/Services';
 import ServiceDetail from './pages/vitrine/ServiceDetail';
 import Formations from './pages/vitrine/Formations';
 import Quote from './pages/vitrine/Quote';
+import VerifyDocument from './pages/vitrine/VerifyDocument';
 import Blog from './pages/vitrine/Blog';
 import BlogPost from './pages/vitrine/BlogPost';
 import Projects from './pages/vitrine/Projects';
@@ -89,6 +90,8 @@ export default function App() {
           <Route path="/projets" element={<PublicLayout><Projects /></PublicLayout>} />
           <Route path="/projets/:id" element={<PublicLayout><ProjectDetail /></PublicLayout>} />
           <Route path="/quote" element={<PublicLayout><Quote /></PublicLayout>} />
+          <Route path="/verify" element={<PublicLayout><VerifyDocument /></PublicLayout>} />
+          <Route path="/verify/:number" element={<PublicLayout><VerifyDocument /></PublicLayout>} />
 
           {/* Auth Route - No Layout */}
           <Route path="/learn/login" element={<Login />} />

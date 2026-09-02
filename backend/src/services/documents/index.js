@@ -1,6 +1,7 @@
 import prisma from '../../config/prisma.js';
 import { storeFile } from '../storage.service.js';
 import { nextNumber } from './numbering.js';
+import { verifyUrlFor, verifyQrPng } from './verify.js';
 import { render as renderCertificate } from './templates/certificate.js';
 import { render as renderInvoice } from './templates/invoice.js';
 import { render as renderQuote } from './templates/quote.js';
@@ -36,7 +37,8 @@ export async function generateDocument(type, data, opts = {}) {
   let number = data.number || (await nextNumber(type));
 
   const buildAsset = async () => {
-    const bytes = await conf.render({ ...data, number });
+    const qrPngBytes = await verifyQrPng(number);
+    const bytes = await conf.render({ ...data, number, verifyUrl: verifyUrlFor(number), qrPngBytes });
     return storeFile({ buffer: Buffer.from(bytes), originalname: `${number}.pdf`, kind: 'pdf', scope: conf.scope });
   };
 
