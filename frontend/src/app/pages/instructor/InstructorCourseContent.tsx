@@ -7,7 +7,7 @@ import { uploadFile } from '../../services/upload';
 import {
   PageHeader, Panel, PanelTitle, Btn, Chip, Field, Input, Modal, EmptyState,
   ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 import MediaEmbed, { resolveEmbed } from '../../components/shell/MediaEmbed';
 
 interface Course { id: string; title: string; students: number; completionRate: number }

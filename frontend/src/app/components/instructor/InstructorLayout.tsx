@@ -40,7 +40,7 @@ export default function InstructorLayout({ children }: { children: ReactNode }) 
   const crumb = TITLES.find((t) => t.match(pathname))?.label ?? 'Espace formateur';
 
   return (
-    <div className="admin-ui instructor-ui flex h-screen overflow-hidden">
+    <div className="tw-ui instructor-ui flex h-screen overflow-hidden">
       <InstructorSidebar collapsed={collapsed} onToggle={toggle} />
 
       <div className="flex min-w-0 flex-1 flex-col">

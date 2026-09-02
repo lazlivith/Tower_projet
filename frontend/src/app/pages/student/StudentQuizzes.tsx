@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { CheckCircle2, Clock, User, Users2 } from 'lucide-react';
 import api from '../../services/api';
 import QuizRunner from '../../components/learn/QuizRunner';
-import { PageHeader, Panel, Btn, Chip, EmptyState, ToastHost, type Toast } from '../../components/admin/ui';
+import { PageHeader, Panel, Btn, Chip, EmptyState, ToastHost, type Toast } from '../../components/ui';
 
 interface QuizItem {
   id: string; title: string; description: string | null; passScore: number; dueAt: string | null;

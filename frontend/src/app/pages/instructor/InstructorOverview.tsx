@@ -4,7 +4,7 @@ import {
   Users2, GraduationCap, PlayCircle, CalendarDays, ClipboardCheck, MessagesSquare, Video,
 } from 'lucide-react';
 import api from '../../services/api';
-import { PageHeader, Panel, PanelTitle, StatCard, EmptyState, Btn } from '../../components/admin/ui';
+import { PageHeader, Panel, PanelTitle, StatCard, EmptyState, Btn } from '../../components/ui';
 
 interface Overview {
   kpis: {

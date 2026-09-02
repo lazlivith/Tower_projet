@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { User, Mail, ShieldCheck, KeyRound } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { PageHeader, Panel } from '../../components/admin/ui';
+import { PageHeader, Panel } from '../../components/ui';
 
 const roleLabel: Record<string, string> = {
   MANAGER: 'Administrateur',

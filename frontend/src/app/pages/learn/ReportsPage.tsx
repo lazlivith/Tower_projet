@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { FileText, CheckCircle2, Clock } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { PageHeader, Panel, Chip, EmptyState } from '../../components/admin/ui';
+import { PageHeader, Panel, Chip, EmptyState } from '../../components/ui';
 
 interface Report {
   id: string; assignment: string; course: string; fileUrl: string | null;

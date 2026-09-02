@@ -5,7 +5,7 @@ import api from '../../services/api';
 import {
   PageHeader, Panel, Btn, Chip, Field, Input, Select, Textarea, Modal, EmptyState,
   ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 interface Session {
   id: string; title: string; description: string | null; scheduledAt: string; duration: number | null;

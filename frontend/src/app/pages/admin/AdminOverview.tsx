@@ -5,7 +5,7 @@ import {
   UserPlus, FolderKanban, Newspaper, FileSignature,
 } from 'lucide-react';
 import api from '../../services/api';
-import { PageHeader, Panel, PanelTitle, StatCard, Chip, EmptyState, Btn } from '../../components/admin/ui';
+import { PageHeader, Panel, PanelTitle, StatCard, Chip, EmptyState, Btn } from '../../components/ui';
 
 interface Overview {
   users: { total: number; students: number; instructors: number; managers: number };

@@ -5,7 +5,7 @@ import api, { toAbsoluteUrl } from '../../services/api';
 import VideoPlayer from '../../components/learn/VideoPlayer';
 import QuizRunner from '../../components/learn/QuizRunner';
 import { parseLessonTitle } from '../../utils/parseLessonTitle';
-import { Panel, Btn, EmptyState } from '../../components/admin/ui';
+import { Panel, Btn, EmptyState } from '../../components/ui';
 
 export default function CourseDetail() {
   const { courseId } = useParams();

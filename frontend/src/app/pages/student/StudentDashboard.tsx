@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { PageHeader, Panel, PanelTitle, StatCard, EmptyState, Btn, Chip } from '../../components/admin/ui';
+import { PageHeader, Panel, PanelTitle, StatCard, EmptyState, Btn, Chip } from '../../components/ui';
 
 interface Enrollment {
   enrollmentId: string;

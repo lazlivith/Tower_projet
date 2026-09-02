@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Video } from 'lucide-react';
 import api from '../../services/api';
-import { PageHeader, Panel, Btn, Chip, EmptyState, ToastHost, type Toast } from '../../components/admin/ui';
+import { PageHeader, Panel, Btn, Chip, EmptyState, ToastHost, type Toast } from '../../components/ui';
 
 interface Session {
   id: string; title: string; scheduledAt: string; duration: number | null;

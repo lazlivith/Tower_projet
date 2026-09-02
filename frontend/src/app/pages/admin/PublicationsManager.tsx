@@ -5,7 +5,7 @@ import { uploadFile } from '../../services/upload';
 import {
   PageHeader, Panel, Btn, Chip, Field, Input, Select, Textarea, Modal,
   EmptyState, ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 interface Publication {
   id: string;

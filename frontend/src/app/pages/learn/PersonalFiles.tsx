@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Download, Award, ReceiptText, FileSignature, FileText } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { PageHeader, Panel, EmptyState } from '../../components/admin/ui';
+import { PageHeader, Panel, EmptyState } from '../../components/ui';
 
 interface Doc { id: string; type: string; number: string | null; title: string; url: string; createdAt: string }
 

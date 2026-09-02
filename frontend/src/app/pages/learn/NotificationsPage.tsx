@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { CheckCheck } from 'lucide-react';
 import api from '../../services/api';
-import { PageHeader, Btn, EmptyState } from '../../components/admin/ui';
+import { PageHeader, Btn, EmptyState } from '../../components/ui';
 
 interface Notif { id: string; type: string; message: string; isRead: boolean; createdAt: string }
 

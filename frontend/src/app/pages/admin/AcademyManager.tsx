@@ -7,7 +7,7 @@ import api, { toAbsoluteUrl } from '../../services/api';
 import {
   PageHeader, Panel, PanelTitle, Btn, Chip, Field, Input, Select, Modal,
   EmptyState, Tabs, ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 interface Classroom { id: string; name: string; students: number; instructor: { id: string; nom: string; email: string } | null }
 interface Lesson { id: string; title: string; videoUrl: string | null; documentUrl: string | null; sequenceOrder: number }

@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const crumb = TITLES.find((t) => t.match(pathname))?.label ?? 'Administration';
 
   return (
-    <div className="admin-ui flex h-screen overflow-hidden">
+    <div className="tw-ui flex h-screen overflow-hidden">
       <AdminSidebar collapsed={collapsed} onToggle={toggle} />
 
       <div className="flex min-w-0 flex-1 flex-col">

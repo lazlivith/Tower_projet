@@ -45,7 +45,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   const crumb = TITLES.find((t) => t.match(pathname))?.label ?? 'Espace apprenant';
 
   return (
-    <div className="admin-ui student-ui flex h-screen overflow-hidden">
+    <div className="tw-ui student-ui flex h-screen overflow-hidden">
       <StudentSidebar collapsed={collapsed} onToggle={toggle} />
 
       <div className="flex min-w-0 flex-1 flex-col">

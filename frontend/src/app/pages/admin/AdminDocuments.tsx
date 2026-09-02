@@ -4,7 +4,7 @@ import api, { toAbsoluteUrl } from '../../services/api';
 import {
   PageHeader, Panel, PanelTitle, Btn, Chip, Field, Input, Select, EmptyState, Tabs,
   DataTable, ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 interface Doc {
   id: string; type: string; number: string; title: string; url: string; createdAt: string;

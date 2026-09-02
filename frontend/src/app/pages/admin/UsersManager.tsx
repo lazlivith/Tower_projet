@@ -4,7 +4,7 @@ import { UserPlus, ShieldCheck, ShieldOff, Award } from 'lucide-react';
 import api from '../../services/api';
 import {
   PageHeader, Btn, Chip, Select, DataTable, EmptyState, ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 type UserItem = {
   id: string; nom: string; email: string; role: string; isActive: boolean;

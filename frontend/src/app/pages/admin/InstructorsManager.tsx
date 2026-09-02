@@ -4,7 +4,7 @@ import api from '../../services/api';
 import {
   PageHeader, Panel, Btn, Chip, Field, Input, Select, Modal, EmptyState,
   DataTable, ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 interface InstructorClass { id: string; name: string; courseId: string; courseTitle: string; students: number }
 interface Instructor {

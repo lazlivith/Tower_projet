@@ -6,7 +6,7 @@ import { uploadFile } from '../../services/upload';
 import {
   PageHeader, Panel, PanelTitle, Btn, Chip, Field, Input, Select, Textarea,
   Modal, EmptyState, ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 type CourseRow = {
   id: string; title: string; level: string | null; price: number; priceLabel: string | null;

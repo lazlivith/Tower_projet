@@ -6,7 +6,7 @@ import api from '../../services/api';
 import {
   PageHeader, Panel, PanelTitle, Btn, Chip, Field, Input, Select, Textarea, Modal,
   EmptyState, Tabs, DataTable, ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 import QuizBuilder, { toApiQuestions, isBuilderValid } from '../../components/shell/QuizBuilder';
 
 interface Classroom {

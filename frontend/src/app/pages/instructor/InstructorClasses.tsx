@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Users2, PlayCircle, MessagesSquare, Mail } from 'lucide-react';
 import api from '../../services/api';
-import { PageHeader, Panel, PanelTitle, Btn, Chip, EmptyState, DataTable, ToastHost, type Toast } from '../../components/admin/ui';
+import { PageHeader, Panel, PanelTitle, Btn, Chip, EmptyState, DataTable, ToastHost, type Toast } from '../../components/ui';
 
 interface Classroom {
   id: string; name: string; courseId: string; courseTitle: string;

@@ -4,7 +4,7 @@ import api, { toAbsoluteUrl } from '../../services/api';
 import {
   PageHeader, Panel, Btn, Field, Select, Modal, EmptyState, Tabs,
   ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 interface Enrollment {
   id: string;

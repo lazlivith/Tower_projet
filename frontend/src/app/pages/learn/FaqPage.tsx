@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { PageHeader } from '../../components/admin/ui';
+import { PageHeader } from '../../components/ui';
 
 const COMMON = [
   {

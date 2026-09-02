@@ -2,7 +2,9 @@ import { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
-/*  Primitives back-office — thème « ingénierie sombre » (.admin-ui)   */
+/*  Design system — primitives « ingénierie sombre ».                  */
+/*  Tokens & classes utilitaires : styles/ui.css (portée .tw-ui).      */
+/*  Utilisé par les coquilles admin / formateur / apprenant.           */
 /* ------------------------------------------------------------------ */
 
 type Div = React.HTMLAttributes<HTMLDivElement>;
@@ -186,9 +188,9 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="admin-ui-modal-backdrop a-scroll" onMouseDown={onClose}>
+    <div className="tw-ui-modal-backdrop a-scroll" onMouseDown={onClose}>
       <div
-        className="admin-ui-modal"
+        className="tw-ui-modal"
         style={{ maxWidth }}
         onMouseDown={(e) => e.stopPropagation()}
       >

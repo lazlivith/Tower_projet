@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Award, Download, Clock, HelpCircle } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
-import { PageHeader, Panel, PanelTitle, EmptyState } from '../../components/admin/ui';
+import { PageHeader, Panel, PanelTitle, EmptyState } from '../../components/ui';
 
 interface Certificate { id: string; courseTitle: string; score: number; issuedAt: string; downloadUrl: string }
 interface Pending {

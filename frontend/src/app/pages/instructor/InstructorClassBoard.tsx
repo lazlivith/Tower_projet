@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Send, Trash2, Pin, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { PageHeader, Panel, Btn, Chip, EmptyState, Textarea, ToastHost, type Toast } from '../../components/admin/ui';
+import { PageHeader, Panel, Btn, Chip, EmptyState, Textarea, ToastHost, type Toast } from '../../components/ui';
 
 interface ClassLite { id: string; name: string; courseTitle: string; students: number; messages: number }
 interface Msg {

@@ -3,7 +3,7 @@ import { CheckCircle, XCircle, Mail, FileDown, Loader2 } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
 import {
   PageHeader, Panel, Btn, Chip, StatCard, EmptyState, Tabs, ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 type Filter = 'ALL' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
 

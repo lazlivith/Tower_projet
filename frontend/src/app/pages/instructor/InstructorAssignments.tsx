@@ -4,7 +4,7 @@ import api from '../../services/api';
 import {
   PageHeader, Panel, Btn, Chip, Field, Input, Textarea, Modal, EmptyState,
   ToastHost, type Toast,
-} from '../../components/admin/ui';
+} from '../../components/ui';
 
 interface Submission {
   id: string; grade: number | null; fileUrl: string | null; status: string; createdAt: string;
