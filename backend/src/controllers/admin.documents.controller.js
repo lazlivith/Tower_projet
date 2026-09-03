@@ -1,6 +1,9 @@
 import prisma from '../config/prisma.js';
-import { generateDocument, DOCUMENT_TYPES } from '../services/documents/index.js';
+import { generateDocument, DOCUMENT_TYPES, fileUrlAbsolute } from '../services/documents/index.js';
 import { nextNumber } from '../services/documents/numbering.js';
+
+/** Réponse API : URL de téléchargement absolue (le stockage garde l'URL relative). */
+const withAbsoluteUrl = (doc) => ({ ...doc, url: fileUrlAbsolute(doc.number) });
 
 /** GET /api/admin/documents?type=&q= — registre des documents générés. */
 export const listDocuments = async (req, res) => {
@@ -14,9 +17,10 @@ export const listDocuments = async (req, res) => {
       },
       orderBy: { createdAt: 'desc' },
       take: 200,
+      omit: { content: true }, // ne jamais renvoyer les octets du PDF dans la liste
       include: { user: { select: { id: true, nom: true, email: true } } },
     });
-    return res.status(200).json(docs);
+    return res.status(200).json(docs.map((d) => ({ ...d, url: fileUrlAbsolute(d.number) })));
   } catch (error) {
     console.error('[DOC] listDocuments:', error);
     return res.status(500).json({ message: 'Erreur lors de la récupération des documents.' });
@@ -56,7 +60,7 @@ export const createAttestation = async (req, res) => {
         title: `Attestation d'inscription — ${enrollment.student.nom}`,
       }
     );
-    return res.status(201).json({ message: 'Attestation générée.', document: doc });
+    return res.status(201).json({ message: 'Attestation générée.', document: withAbsoluteUrl(doc) });
   } catch (error) {
     if (error.status) return res.status(error.status).json({ message: error.message });
     console.error('[DOC] createAttestation:', error);
@@ -97,7 +101,7 @@ export const createQuoteDocument = async (req, res) => {
       },
       { quoteId: quote.id, title: `Devis — ${quote.clientName}` }
     );
-    return res.status(201).json({ message: 'Devis PDF généré.', document: doc, reference });
+    return res.status(201).json({ message: 'Devis PDF généré.', document: withAbsoluteUrl(doc), reference });
   } catch (error) {
     if (error.status) return res.status(error.status).json({ message: error.message });
     console.error('[DOC] createQuoteDocument:', error);
@@ -139,7 +143,7 @@ export const createInvoiceDocument = async (req, res) => {
         title: `Facture — ${payment.enrollment.student.nom}`,
       }
     );
-    return res.status(201).json({ message: 'Facture générée.', document: doc });
+    return res.status(201).json({ message: 'Facture générée.', document: withAbsoluteUrl(doc) });
   } catch (error) {
     if (error.status) return res.status(error.status).json({ message: error.message });
     console.error('[DOC] createInvoiceDocument:', error);
@@ -172,7 +176,7 @@ export const createCertificateDocument = async (req, res) => {
     if (!exists) {
       await prisma.certificate.create({ data: { studentId, courseId, pdfUrl: doc.url, score } });
     }
-    return res.status(201).json({ message: 'Certificat généré.', document: doc });
+    return res.status(201).json({ message: 'Certificat généré.', document: withAbsoluteUrl(doc) });
   } catch (error) {
     if (error.status) return res.status(error.status).json({ message: error.message });
     console.error('[DOC] createCertificateDocument:', error);

@@ -400,6 +400,8 @@ model GeneratedDocument {
   quoteId   String?      @map("quote_id") @db.Uuid
   paymentId String?      @map("payment_id") @db.Uuid
   meta      Json?
+  /// Octets du PDF — servi par GET /api/documents/file/:number (indépendant de tout CDN).
+  content   Bytes?
   createdAt DateTime     @default(now()) @map("created_at") @db.Timestamp
 
   user User? @relation("UserDocuments", fields: [userId], references: [id], onDelete: SetNull)

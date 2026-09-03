@@ -1,7 +1,7 @@
 import prisma from '../config/prisma.js';
 import { sendMail } from '../services/mail.service.js';
 import { quoteReceivedEmail, quoteForAdminEmail } from '../services/mail.templates.js';
-import { generateDocument } from '../services/documents/index.js';
+import { generateDocument, fileUrlAbsolute } from '../services/documents/index.js';
 import { nextNumber } from '../services/documents/numbering.js';
 
 // Public: Demander un devis — génère aussitôt le PDF pour l'admin.
@@ -21,7 +21,7 @@ export const createQuote = async (req, res) => {
         { number: reference, clientName, clientEmail: email, serviceType, description, amount: null, currency: 'MAD' },
         { quoteId: quote.id, title: `Devis — ${clientName}` }
       );
-      documentUrl = doc.url;
+      documentUrl = fileUrlAbsolute(doc.number);
     } catch (e) {
       console.error('[QUOTE] génération PDF:', e.message);
     }

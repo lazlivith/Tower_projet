@@ -463,6 +463,19 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     assert(notif, 'aucune notification manager pour le devis');
     await prisma.notification.deleteMany({ where: { message: { contains: r.body.reference } } });
   });
+  await check('GET /api/documents/file/:number → PDF servi (application/pdf, %PDF)', async () => {
+    const ref = (await prisma.generatedDocument.findFirst({ where: { id: created.docIds.at(-1) } })).number;
+    const r = await api().get(`/api/documents/file/${ref}`).buffer(true).parse((res, cb) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => cb(null, Buffer.concat(chunks)));
+    });
+    eq(r.status, 200, 'HTTP');
+    assert((r.headers['content-type'] || '').includes('application/pdf'), `content-type = ${r.headers['content-type']}`);
+    assert(Buffer.isBuffer(r.body) && r.body.subarray(0, 5).toString() === '%PDF-', 'le corps doit être un PDF');
+    assert(/attachment|inline/.test(r.headers['content-disposition'] || ''), 'content-disposition manquant');
+    eq((await api().get('/api/documents/file/TS-DEV-0000-0000')).status, 404, 'référence inconnue → 404');
+  });
   await check('GET /quotes (admin) → devis présent', async () => {
     const r = await A.get('/api/quotes');
     eq(r.status, 200, 'HTTP');
