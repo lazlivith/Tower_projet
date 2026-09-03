@@ -12,11 +12,22 @@ const empty = {
   service: '', projectType: '', budget: '', description: '', urgency: 'normal',
 };
 
+const FIELD_LABELS: Record<string, string> = {
+  clientName: 'Nom complet',
+  email: 'Email',
+  serviceType: 'Service',
+  description: 'Description du projet',
+};
+
+// Rejette les points en tête / fin / consécutifs dans la partie locale (ex. « contact.@gmail.com »).
+const EMAIL_RE = /^[^\s@.]+(\.[^\s@.]+)*@[^\s@.]+(\.[^\s@.]+)+$/;
+
 export default function Quote() {
   const navigate = useNavigate();
   const [form, setForm] = useState(empty);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ champ: string; message: string }[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
   const set = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -25,6 +36,13 @@ export default function Quote() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors([]);
+
+    const email = form.email.trim();
+    if (!EMAIL_RE.test(email)) {
+      setError("L'adresse email n'est pas valide (format attendu : nom@domaine.com).");
+      return;
+    }
 
     const description = [
       form.description.trim(), '',
@@ -35,8 +53,8 @@ export default function Quote() {
       form.phone ? `— Téléphone : ${form.phone}` : '',
     ].filter(Boolean).join('\n');
 
-    if (description.length < 20) {
-      setError('Merci de détailler votre projet (au moins 20 caractères).');
+    if (form.description.trim().length < 20) {
+      setError('Merci de détailler votre projet dans la description (au moins 20 caractères).');
       return;
     }
 
@@ -44,14 +62,21 @@ export default function Quote() {
     try {
       await api.post('/quotes/request', {
         clientName: form.clientName.trim(),
-        email: form.email.trim(),
+        email,
         serviceType: form.service,
         description,
       });
       setSubmitted(true);
       setTimeout(() => navigate('/'), 3500);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Une erreur est survenue. Veuillez réessayer.");
+      const data = err.response?.data;
+      const list: { champ: string; message: string }[] = Array.isArray(data?.errors) ? data.errors : [];
+      setFieldErrors(list);
+      setError(
+        list.length
+          ? 'Certaines informations sont invalides — corrigez les points ci-dessous :'
+          : data?.message || 'Une erreur est survenue. Veuillez réessayer.'
+      );
     } finally {
       setLoading(false);
     }
@@ -141,7 +166,20 @@ export default function Quote() {
               className={field + ' resize-none'} placeholder="Nature de l'ouvrage, surface, contraintes, attentes…" />
           </div>
 
-          {error && <p className="sm:col-span-2 text-sm text-red-600">{error}</p>}
+          {error && (
+            <div className="sm:col-span-2 text-sm text-red-600">
+              <p>{error}</p>
+              {fieldErrors.length > 0 && (
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  {fieldErrors.map((f, i) => (
+                    <li key={i}>
+                      <span className="font-medium">{FIELD_LABELS[f.champ] || f.champ}</span> : {f.message}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           <div className="sm:col-span-2">
             <button

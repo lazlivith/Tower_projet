@@ -59,13 +59,18 @@ export function resolveFolder(scope = 'misc', kind = 'image') {
 const ensureDir = (dir) => { if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); };
 
 /** Upload d'un buffer vers Cloudinary via stream (pas de fichier temporaire). */
-const cloudinaryUpload = (buffer, { folder, resourceType, publicId }) =>
+const cloudinaryUpload = (buffer, { folder, resourceType, publicId, filename }) =>
   new Promise((resolve, reject) => {
+    // Pour les fichiers `raw` (PDF), l'extension fait partie du public_id : sans
+    // `use_filename`, Cloudinary génère un identifiant sans `.pdf` et sert le
+    // fichier en `application/octet-stream` (il s'ouvre alors comme du texte).
+    const keepName = resourceType === 'raw' && Boolean(filename);
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: `${CLOUDINARY_BASE_FOLDER}/${folder}`,
         resource_type: resourceType,
         ...(publicId ? { public_id: publicId } : {}),
+        ...(keepName ? { filename_override: filename, use_filename: true } : {}),
         unique_filename: true,
         overwrite: false,
       },
@@ -89,7 +94,7 @@ export const storeFile = async ({ buffer, originalname = '', kind = 'image', sco
   const ext = (path.extname(originalname) || '').toLowerCase();
 
   if (isCloudinaryConfigured) {
-    const result = await cloudinaryUpload(buffer, { folder, resourceType, publicId });
+    const result = await cloudinaryUpload(buffer, { folder, resourceType, publicId, filename: originalname || undefined });
     return {
       url: result.secure_url,
       publicId: result.public_id,
