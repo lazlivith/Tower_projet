@@ -26,9 +26,20 @@ describe('parseQuizWorkbook', () => {
     expect(questions[1].correctAnswer).toBe('A'); // casse normalisée
   });
 
-  it('rejette une colonne manquante', () => {
-    const buf = toBuffer([{ Question: 'x', OptionA: '1', OptionB: '2', OptionC: '3', CorrectAnswer: 'A' }]);
-    expect(() => parseQuizWorkbook(buf)).toThrow(/OptionD/);
+  it('accepte un nombre variable d\'options (2 à 6)', () => {
+    const buf = toBuffer([{ Question: 'x', OptionA: '1', OptionB: '2', OptionC: '3', CorrectAnswer: 'C' }]);
+    const { questions } = parseQuizWorkbook(buf);
+    expect(questions[0].options).toEqual({ A: '1', B: '2', C: '3' });
+    expect(questions[0].correctAnswer).toBe('C');
+  });
+
+  it('rejette une colonne obligatoire manquante', () => {
+    // pas de colonne CorrectAnswer / Réponse
+    const sansReponse = toBuffer([{ Question: 'x', OptionA: '1', OptionB: '2' }]);
+    expect(() => parseQuizWorkbook(sansReponse)).toThrow(/CorrectAnswer|Réponse/);
+    // une seule option → moins de 2 colonnes d'options
+    const uneOption = toBuffer([{ Question: 'x', OptionA: '1', CorrectAnswer: 'A' }]);
+    expect(() => parseQuizWorkbook(uneOption)).toThrow(/2 colonnes/);
   });
 
   it('rejette une ligne invalide avec le numéro de ligne', () => {

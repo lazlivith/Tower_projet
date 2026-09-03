@@ -76,6 +76,11 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - name: prisma migrate deploy
-        run: npx prisma migrate deploy
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::Secret DATABASE_URL absent — pas de base de production à migrer, étape ignorée."
+            exit 0
+          fi
+          npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
