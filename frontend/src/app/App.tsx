@@ -1,75 +1,82 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import ErrorBoundary from './components/shared/ErrorBoundary';
+import PageLoader from './components/shared/PageLoader';
 
 const queryClient = new QueryClient();
 import PublicLayout from './components/vitrine/PublicLayout';
-import StudentLayout from './components/student/StudentLayout';
 import ProtectedRoute from './components/learn/ProtectedRoute';
 
-// Public Pages
+// Pages chargées immédiatement : coquille de l'app + première page vue par
+// tout visiteur anonyme (accueil, connexion). Tout le reste est différé
+// (React.lazy) pour que le bundle initial n'embarque pas le code des 3
+// espaces back-office — jamais visités par un simple visiteur de la vitrine.
 import Home from './pages/vitrine/Home';
-import About from './pages/vitrine/About';
-import Services from './pages/vitrine/Services';
-import ServiceDetail from './pages/vitrine/ServiceDetail';
-import Formations from './pages/vitrine/Formations';
-import Quote from './pages/vitrine/Quote';
-import VerifyDocument from './pages/vitrine/VerifyDocument';
-import Blog from './pages/vitrine/Blog';
-import BlogPost from './pages/vitrine/BlogPost';
-import Projects from './pages/vitrine/Projects';
-import ProjectDetail from './pages/vitrine/ProjectDetail';
-import FormationDetail from './pages/vitrine/FormationDetail';
-
-// Auth & Payment
 import Login from './pages/learn/auth/Login';
 import FirstLogin from './pages/learn/auth/FirstLogin';
-import RestrictedAccess from './pages/learn/auth/RestrictedAccess';
-import PaymentPage from './pages/learn/payment/PaymentPage';
-import PaymentResult from './pages/learn/payment/PaymentResult';
+
+// Public Pages (vitrine secondaire)
+const About = lazy(() => import('./pages/vitrine/About'));
+const Services = lazy(() => import('./pages/vitrine/Services'));
+const ServiceDetail = lazy(() => import('./pages/vitrine/ServiceDetail'));
+const Formations = lazy(() => import('./pages/vitrine/Formations'));
+const FormationDetail = lazy(() => import('./pages/vitrine/FormationDetail'));
+const Quote = lazy(() => import('./pages/vitrine/Quote'));
+const VerifyDocument = lazy(() => import('./pages/vitrine/VerifyDocument'));
+const Blog = lazy(() => import('./pages/vitrine/Blog'));
+const BlogPost = lazy(() => import('./pages/vitrine/BlogPost'));
+const Projects = lazy(() => import('./pages/vitrine/Projects'));
+const ProjectDetail = lazy(() => import('./pages/vitrine/ProjectDetail'));
+
+// Auth & Payment
+const RestrictedAccess = lazy(() => import('./pages/learn/auth/RestrictedAccess'));
+const PaymentPage = lazy(() => import('./pages/learn/payment/PaymentPage'));
+const PaymentResult = lazy(() => import('./pages/learn/payment/PaymentResult'));
 
 // User-menu shared pages
-import RoleShell from './components/shell/RoleShell';
-import ProfilePage from './pages/learn/ProfilePage';
-import NotificationsPage from './pages/learn/NotificationsPage';
-import PersonalFiles from './pages/learn/PersonalFiles';
-import ReportsPage from './pages/learn/ReportsPage';
-import FaqPage from './pages/learn/FaqPage';
-import SessionRoom from './pages/learn/SessionRoom';
+const RoleShell = lazy(() => import('./components/shell/RoleShell'));
+const ProfilePage = lazy(() => import('./pages/learn/ProfilePage'));
+const NotificationsPage = lazy(() => import('./pages/learn/NotificationsPage'));
+const PersonalFiles = lazy(() => import('./pages/learn/PersonalFiles'));
+const ReportsPage = lazy(() => import('./pages/learn/ReportsPage'));
+const FaqPage = lazy(() => import('./pages/learn/FaqPage'));
+const SessionRoom = lazy(() => import('./pages/learn/SessionRoom'));
 
 // Student Pages
-import StudentDashboard from './pages/student/StudentDashboard';
-import CourseDetail from './pages/student/CourseDetail';
-import StudentCalendar from './pages/student/StudentCalendar';
-import StudentClassBoard from './pages/student/StudentClassBoard';
-import StudentQuizzes from './pages/student/StudentQuizzes';
-import StudentCertificates from './pages/student/StudentCertificates';
+const StudentLayout = lazy(() => import('./components/student/StudentLayout'));
+const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
+const CourseDetail = lazy(() => import('./pages/student/CourseDetail'));
+const StudentCalendar = lazy(() => import('./pages/student/StudentCalendar'));
+const StudentClassBoard = lazy(() => import('./pages/student/StudentClassBoard'));
+const StudentQuizzes = lazy(() => import('./pages/student/StudentQuizzes'));
+const StudentCertificates = lazy(() => import('./pages/student/StudentCertificates'));
 
 // Instructor Pages
-import InstructorLayout from './components/instructor/InstructorLayout';
-import InstructorOverview from './pages/instructor/InstructorOverview';
-import InstructorClasses from './pages/instructor/InstructorClasses';
-import InstructorCourseContent from './pages/instructor/InstructorCourseContent';
-import InstructorCalendar from './pages/instructor/InstructorCalendar';
-import InstructorClassBoard from './pages/instructor/InstructorClassBoard';
-import InstructorAssignments from './pages/instructor/InstructorAssignments';
-import InstructorQuizzes from './pages/instructor/InstructorQuizzes';
+const InstructorLayout = lazy(() => import('./components/instructor/InstructorLayout'));
+const InstructorOverview = lazy(() => import('./pages/instructor/InstructorOverview'));
+const InstructorClasses = lazy(() => import('./pages/instructor/InstructorClasses'));
+const InstructorCourseContent = lazy(() => import('./pages/instructor/InstructorCourseContent'));
+const InstructorCalendar = lazy(() => import('./pages/instructor/InstructorCalendar'));
+const InstructorClassBoard = lazy(() => import('./pages/instructor/InstructorClassBoard'));
+const InstructorAssignments = lazy(() => import('./pages/instructor/InstructorAssignments'));
+const InstructorQuizzes = lazy(() => import('./pages/instructor/InstructorQuizzes'));
 
 // Admin Pages
-import AdminLayout from './components/admin/AdminLayout';
-import AdminOverview from './pages/admin/AdminOverview';
-import AdminDocuments from './pages/admin/AdminDocuments';
-import CoursesManager from './pages/admin/CoursesManager';
-import InstructorsManager from './pages/admin/InstructorsManager';
-import AcademyManager from './pages/admin/AcademyManager';
-import UsersManager from './pages/admin/UsersManager';
-import PaymentsManager from './pages/admin/PaymentsManager';
-import PublicationsManager from './pages/admin/PublicationsManager';
-import ProjectsManager from './pages/admin/ProjectsManager';
-import ServicesManager from './pages/admin/ServicesManager';
-import QuotesManager from './pages/admin/QuotesManager';
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
+const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'));
+const AdminDocuments = lazy(() => import('./pages/admin/AdminDocuments'));
+const CoursesManager = lazy(() => import('./pages/admin/CoursesManager'));
+const InstructorsManager = lazy(() => import('./pages/admin/InstructorsManager'));
+const AcademyManager = lazy(() => import('./pages/admin/AcademyManager'));
+const UsersManager = lazy(() => import('./pages/admin/UsersManager'));
+const PaymentsManager = lazy(() => import('./pages/admin/PaymentsManager'));
+const PublicationsManager = lazy(() => import('./pages/admin/PublicationsManager'));
+const ProjectsManager = lazy(() => import('./pages/admin/ProjectsManager'));
+const ServicesManager = lazy(() => import('./pages/admin/ServicesManager'));
+const QuotesManager = lazy(() => import('./pages/admin/QuotesManager'));
 
 export default function App() {
   return (
@@ -78,6 +85,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
       <BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes with Public Layout */}
           <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
@@ -224,6 +232,7 @@ export default function App() {
           {/* 404 - Redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
       </AuthProvider>
       </QueryClientProvider>
