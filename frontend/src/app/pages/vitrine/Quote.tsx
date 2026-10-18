@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { CheckCircle2, Loader2, ArrowUpRight } from 'lucide-react';
 import api from '../../services/api';
+import { useReveal } from '../../hooks/useReveal';
 
 const SERVICES = ['BIM & Modélisation', 'Calculs Eurocodes', 'Diagnostic & Confortement', 'Formation sur mesure', 'Autre'];
 const TYPES = ['Résidentiel', 'Commercial / Tertiaire', 'Industriel', 'Infrastructure / Ouvrage d\'art', 'Santé', 'Autre'];
@@ -84,9 +85,11 @@ export default function Quote() {
 
   const field = 'w-full border-0 border-b border-[color:var(--color-line)] bg-transparent py-3 text-[15px] outline-none focus:border-[color:var(--color-ink)] transition-colors';
 
+  useReveal([submitted]);
+
   if (submitted) {
     return (
-      <div className="mx-auto flex min-h-[70vh] max-w-[1400px] flex-col items-center justify-center px-5 text-center">
+      <div className="fade-up mx-auto flex min-h-[70vh] max-w-[1400px] flex-col items-center justify-center px-5 text-center">
         <CheckCircle2 className="mb-6 h-14 w-14 text-[color:var(--color-accent)]" />
         <h1 className="text-3xl sm:text-4xl">Demande envoyée</h1>
         <p className="mt-4 max-w-md text-[color:var(--color-ink-soft)]">
@@ -110,7 +113,7 @@ export default function Quote() {
         </p>
       </section>
 
-      <section className="mx-auto max-w-[900px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+      <section className="fade-up mx-auto max-w-[900px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
         <form onSubmit={handleSubmit} className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
           <div>
             <label className="eyebrow">Nom complet *</label>

@@ -68,7 +68,7 @@ export default function Home() {
       </Helmet>
 
       {/* ---------- HERO ---------- */}
-      <section className="relative -mt-[66px] flex h-[82vh] min-h-[500px] max-h-[760px] w-full items-end overflow-hidden bg-[color:var(--paper)]">
+      <section className="relative -mt-[80px] flex h-[82vh] min-h-[500px] max-h-[760px] w-full items-end overflow-hidden bg-[color:var(--paper)]">
         {/* photo de fond très atténuée */}
         <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.18]" />
         {/* maillage éléments finis animé — fond dynamique */}

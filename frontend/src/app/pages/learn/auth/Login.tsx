@@ -1,13 +1,22 @@
 import { useState } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router';
-import { LogIn, UserPlus } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router';
+import { Helmet } from 'react-helmet-async';
+import { LogIn, UserPlus, Mail, Lock, User2, Loader2 } from 'lucide-react';
+import AuthShell from '../../../components/vitrine/AuthShell';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useReveal } from '../../../hooks/useReveal';
+
+const DEMO_ACCOUNTS = [
+  { role: 'Étudiant', email: 'eleve@tower.ma' },
+  { role: 'Instructeur', email: 'prof@tower.ma' },
+  { role: 'Admin', email: 'admin@tower.ma' },
+];
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, register, user } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const returnUrl = location.state?.returnUrl;
@@ -17,6 +26,8 @@ export default function Login() {
     password: '',
     name: '',
   });
+
+  useReveal([isLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,82 +72,93 @@ export default function Login() {
     });
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1A1A2E] to-[#16213E] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-12 h-12 bg-[#FFC107] rounded flex items-center justify-center">
-              <span className="font-bold text-[#1A1A2E] text-xl">TS</span>
-            </div>
-          </div>
-          <h2 className="mb-2">{isLogin ? 'Connexion à Tower-Learn' : 'Rejoindre Tower-Learn'}</h2>
-          <p className="text-gray-600">
-            {isLogin ? 'Accédez à votre espace pédagogique' : 'Créez votre compte étudiant'}
-          </p>
-        </div>
+  const field = 'w-full border-0 border-b border-[color:var(--color-line)] bg-transparent py-2.5 pl-7 text-[15px] outline-none focus:border-[color:var(--color-accent)] transition-colors';
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+  return (
+    <div>
+      <Helmet><title>{isLogin ? 'Connexion' : 'Inscription'} — Tower Structure</title></Helmet>
+
+      <AuthShell
+        icon={isLogin ? LogIn : UserPlus}
+        eyebrow="Espace pédagogique"
+        title={isLogin ? 'Connexion à Tower Structure' : 'Rejoindre Tower Structure'}
+        subtitle={isLogin ? 'Accédez à votre espace apprenant, formateur ou administrateur.' : 'Créez votre compte étudiant en quelques secondes.'}
+        footer={
+          isLogin && (
+            <div className="fade-up mt-6 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-paper-2)]/40 p-5">
+              <p className="eyebrow">Comptes de démonstration</p>
+              <ul className="mt-3 space-y-2">
+                {DEMO_ACCOUNTS.map((a) => (
+                  <li key={a.email} className="flex items-center justify-between gap-3 border-t border-[color:var(--color-line)] py-2 text-[13px] first:border-t-0 first:pt-0">
+                    <span className="text-[color:var(--color-ink-soft)]">{a.role}</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((f) => ({ ...f, email: a.email }))}
+                      className="font-mono text-[12.5px] text-[color:var(--color-accent)] hover:underline"
+                      title="Pré-remplir l'email"
+                    >
+                      {a.email}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-[11.5px] text-[color:var(--color-ink-soft)]">
+                Mot de passe pour tous les comptes : <span className="font-mono text-[color:var(--color-ink)]">password123</span>
+              </p>
+            </div>
+          )
+        }
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {!isLogin && (
             <div>
-              <label htmlFor="name" className="block mb-2">
-                Nom complet
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-              />
+              <label htmlFor="name" className="eyebrow">Nom complet</label>
+              <div className="relative mt-2">
+                <User2 className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
+                <input
+                  type="text" id="name" name="name" required
+                  value={formData.name} onChange={handleChange}
+                  className={field}
+                />
+              </div>
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-            />
+            <label htmlFor="email" className="eyebrow">Email</label>
+            <div className="relative mt-2">
+              <Mail className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
+              <input
+                type="email" id="email" name="email" required
+                value={formData.email} onChange={handleChange}
+                className={field}
+                autoComplete="email"
+              />
+            </div>
           </div>
 
           <div>
-            <label htmlFor="password" className="block mb-2">
-              Mot de passe
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
-            />
+            <label htmlFor="password" className="eyebrow">Mot de passe</label>
+            <div className="relative mt-2">
+              <Lock className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
+              <input
+                type="password" id="password" name="password" required
+                value={formData.password} onChange={handleChange}
+                className={field}
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
+              />
+            </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-[13px] text-red-500">
               {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-4 py-3 bg-[#FFC107] text-[#1A1A2E] rounded-lg hover:bg-[#FFD54F] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading} className="btn btn-solid mt-2 w-full justify-center disabled:opacity-60">
             {loading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#1A1A2E]"></div>
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
                 {isLogin ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
@@ -144,38 +166,16 @@ export default function Login() {
               </>
             )}
           </button>
-        </form>
 
-        <div className="mt-6 text-center">
           <button
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError('');
-            }}
-            className="text-[#FFC107] hover:underline"
+            type="button"
+            onClick={() => { setIsLogin(!isLogin); setError(''); }}
+            className="arrow-link mx-auto text-[13px] text-[color:var(--color-ink-soft)]"
           >
             {isLogin ? "Pas encore de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
           </button>
-        </div>
-
-        {isLogin && (
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm mb-2 font-semibold">Comptes de démonstration:</p>
-            <div className="text-sm space-y-1 text-gray-600">
-              <p>👤 Étudiant: <span className="font-mono">eleve@tower.ma</span></p>
-              <p>👨‍🏫 Instructeur: <span className="font-mono">prof@tower.ma</span></p>
-              <p>👨‍💼 Admin: <span className="font-mono">admin@tower.ma</span></p>
-              <p className="mt-2 text-xs text-gray-500">Mot de passe: <span className="font-mono">password123</span> (tous comptes)</p>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-6 text-center">
-          <Link to="/" className="text-gray-600 hover:text-[#FFC107] text-sm">
-            ← Retour à l'accueil
-          </Link>
-        </div>
-      </div>
+        </form>
+      </AuthShell>
     </div>
   );
 }

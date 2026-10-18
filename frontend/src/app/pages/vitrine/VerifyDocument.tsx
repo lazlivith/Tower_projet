@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router';
 import { Helmet } from 'react-helmet-async';
 import { ShieldCheck, ShieldX, Loader2, ArrowRight } from 'lucide-react';
 import api from '../../services/api';
+import { useReveal } from '../../hooks/useReveal';
 
 interface Result {
   valid: boolean;
@@ -40,6 +41,8 @@ export default function VerifyDocument() {
     if (paramNumber) check(paramNumber);
   }, [paramNumber, check]);
 
+  useReveal([result, loading]);
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const ref = input.trim().toUpperCase();
@@ -50,7 +53,7 @@ export default function VerifyDocument() {
     <div>
       <Helmet><title>Vérification de document — Tower Structure</title></Helmet>
 
-      <section className="mx-auto max-w-[720px] px-5 pt-24 pb-28 sm:px-8 lg:pt-32">
+      <section className="fade-up mx-auto max-w-[720px] px-5 pt-24 pb-28 sm:px-8 lg:pt-32">
         <p className="eyebrow">Authenticité</p>
         <h1 className="mt-4 text-3xl leading-[1.1] sm:text-5xl">Vérifier un document</h1>
         <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[color:var(--color-ink-soft)]">
@@ -81,7 +84,7 @@ export default function VerifyDocument() {
 
           {result && !loading && (
             result.valid ? (
-              <div className="rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-paper-2)] p-6">
+              <div className="fade-up rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-paper-2)] p-6">
                 <div className="flex items-center gap-3">
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-[color:color-mix(in_srgb,#34d399_20%,transparent)] text-[#34d399]">
                     <ShieldCheck className="h-6 w-6" />
@@ -102,7 +105,7 @@ export default function VerifyDocument() {
                 </p>
               </div>
             ) : (
-              <div className="rounded-2xl border border-[color:var(--color-line)] p-6">
+              <div className="fade-up rounded-2xl border border-[color:var(--color-line)] p-6">
                 <div className="flex items-center gap-3">
                   <span className="grid h-11 w-11 place-items-center rounded-full bg-[color:color-mix(in_srgb,#f87171_18%,transparent)] text-[#f87171]">
                     <ShieldX className="h-6 w-6" />

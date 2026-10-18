@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { ArrowLeft } from 'lucide-react';
 import api, { toAbsoluteUrl } from '../../services/api';
+import { useReveal } from '../../hooks/useReveal';
 
 interface Post {
   id: string;
@@ -25,6 +26,8 @@ export default function BlogPost() {
       .then((r) => { setPost(r.data); setState('ok'); })
       .catch(() => setState('notfound'));
   }, [id]);
+
+  useReveal([post]);
 
   if (state === 'loading') return <div className="py-40 text-center text-[color:var(--color-ink-soft)]">Chargement…</div>;
   if (state === 'notfound' || !post) {
@@ -53,10 +56,12 @@ export default function BlogPost() {
       )}
 
       {post.imageUrl && (
-        <img src={toAbsoluteUrl(post.imageUrl)} alt={post.title} className="mt-10 w-full object-cover" />
+        <div className="fade-up reveal-img mt-10">
+          <img src={toAbsoluteUrl(post.imageUrl)} alt={post.title} className="w-full object-cover" />
+        </div>
       )}
 
-      <div className="mt-10 whitespace-pre-wrap text-[16.5px] leading-[1.75] text-[color:var(--color-ink)]">
+      <div className="fade-up mt-10 whitespace-pre-wrap text-[16.5px] leading-[1.75] text-[color:var(--color-ink)]">
         {post.content}
       </div>
 

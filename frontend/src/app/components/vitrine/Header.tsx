@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Menu, X, ArrowUpRight, ChevronDown, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useServices } from '../../hooks/useServices';
@@ -17,7 +17,8 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
   const [open, setOpen] = useState(false);
   const [mobileServices, setMobileServices] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [atFooter, setAtFooter] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const servicesRef = useRef<HTMLDivElement>(null);
   const { services } = useServices();
 
   const NAV = [
@@ -39,19 +40,22 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Efface l'en-tête à l'approche du pied de page
-  useEffect(() => {
-    const sentinel = document.getElementById('footer-sentinel');
-    if (!sentinel || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver(
-      ([e]) => setAtFooter(e.isIntersecting),
-      { rootMargin: '0px 0px -40px 0px', threshold: 0 }
-    );
-    io.observe(sentinel);
-    return () => io.disconnect();
-  }, [pathname]);
+  useEffect(() => { setOpen(false); setMobileServices(false); setServicesOpen(false); }, [pathname]);
 
-  useEffect(() => { setOpen(false); setMobileServices(false); }, [pathname]);
+  // Menu « Services » cliquable (en plus du survol) — se ferme au clic extérieur ou à l'échappement
+  useEffect(() => {
+    if (!servicesOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) setServicesOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setServicesOpen(false); };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [servicesOpen]);
 
   const dashboardLink = () => {
     if (!user) return '/learn/login';
@@ -66,15 +70,13 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
     <>
       <header
         className={`fixed top-0 inset-x-0 z-50 border-b backdrop-blur-xl transition-all duration-500 will-change-transform ${
-          atFooter ? 'header-hidden' : ''
-        } ${
           scrolled
             ? 'bg-[color:var(--color-paper)]/85 border-[color:var(--color-line)] shadow-[0_1px_24px_-10px_rgba(0,0,0,0.4)]'
             : 'bg-[color:var(--color-paper)]/55 border-transparent'
         }`}
       >
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-12">
-          <div className="flex h-[66px] items-center justify-between">
+          <div className="flex h-[80px] items-center justify-between">
             <Link
               to="/"
               className="font-[family-name:var(--font-display)] text-[15px] font-semibold tracking-[0.14em] uppercase text-[color:var(--color-ink)]"
@@ -84,27 +86,35 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
 
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-1">
-              {NAV.map((n) => (
-                <div key={n.to} className="group relative">
-                  <Link
-                    to={n.to}
-                    className={`flex items-center gap-1 px-3.5 py-2 text-[13.5px] text-[color:var(--color-ink)] transition-opacity ${
-                      isActive(n.to) ? '' : 'opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <span className="relative">
-                      {n.label}
-                      <span
-                        className={`absolute -bottom-1 left-0 h-px bg-[color:var(--color-accent)] transition-all duration-300 ${
-                          isActive(n.to) ? 'w-full' : 'w-0 group-hover:w-full'
-                        }`}
+              {NAV.map((n) =>
+                n.sub ? (
+                  <div key={n.to} ref={servicesRef} className="group relative">
+                    <button
+                      type="button"
+                      onClick={() => setServicesOpen((v) => !v)}
+                      aria-expanded={servicesOpen}
+                      className={`flex items-center gap-1 px-3.5 py-2 text-[13.5px] text-[color:var(--color-ink)] transition-opacity ${
+                        isActive(n.to) ? '' : 'opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <span className="relative">
+                        {n.label}
+                        <span
+                          className={`absolute -bottom-1 left-0 h-px bg-[color:var(--color-accent)] transition-all duration-300 ${
+                            isActive(n.to) ? 'w-full' : 'w-0 group-hover:w-full'
+                          }`}
+                        />
+                      </span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180 ${servicesOpen ? 'rotate-180' : ''}`}
                       />
-                    </span>
-                    {n.sub && <ChevronDown className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />}
-                  </Link>
+                    </button>
 
-                  {n.sub && (
-                    <div className="invisible absolute left-0 top-full pt-3 opacity-0 translate-y-1 transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0">
+                    <div
+                      className={`absolute left-0 top-full pt-3 opacity-0 translate-y-1 transition-all duration-300 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 ${
+                        servicesOpen ? 'visible opacity-100 translate-y-0' : 'invisible'
+                      }`}
+                    >
                       <div className="w-[320px] rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] p-2 shadow-[0_30px_60px_-25px_rgba(0,0,0,0.3)]">
                         {n.sub.map((s) => (
                           <Link
@@ -124,9 +134,26 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
                         </Link>
                       </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                ) : (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    className={`flex items-center gap-1 px-3.5 py-2 text-[13.5px] text-[color:var(--color-ink)] transition-opacity group ${
+                      isActive(n.to) ? '' : 'opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <span className="relative">
+                      {n.label}
+                      <span
+                        className={`absolute -bottom-1 left-0 h-px bg-[color:var(--color-accent)] transition-all duration-300 ${
+                          isActive(n.to) ? 'w-full' : 'w-0 group-hover:w-full'
+                        }`}
+                      />
+                    </span>
+                  </Link>
+                )
+              )}
             </nav>
 
             <div className="flex items-center gap-2 pl-2 sm:gap-3 sm:pl-3">
@@ -169,7 +196,7 @@ export default function Header({ theme = 'dark', onToggleTheme }: HeaderProps) {
 
       {/* Mobile overlay */}
       {open && (
-        <div className="fixed inset-0 z-40 bg-[color:var(--color-paper)] pt-[66px] md:hidden overflow-y-auto">
+        <div className="fixed inset-0 z-40 bg-[color:var(--color-paper)] pt-[80px] md:hidden overflow-y-auto">
           <nav className="flex flex-col px-6 py-6">
             {NAV.map((n) =>
               n.sub ? (

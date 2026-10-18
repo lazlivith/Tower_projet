@@ -102,9 +102,9 @@ export default function App() {
           <Route path="/verify" element={<PublicLayout><VerifyDocument /></PublicLayout>} />
           <Route path="/verify/:number" element={<PublicLayout><VerifyDocument /></PublicLayout>} />
 
-          {/* Auth Route - No Layout */}
-          <Route path="/learn/login" element={<Login />} />
-          <Route path="/learn/first-login" element={<FirstLogin />} />
+          {/* Authentification — coquille vitrine (header/footer/fond animé/transitions) */}
+          <Route path="/learn/login" element={<PublicLayout><Login /></PublicLayout>} />
+          <Route path="/learn/first-login" element={<PublicLayout><FirstLogin /></PublicLayout>} />
 
           {/* Menu utilisateur — pages transverses (tous rôles authentifiés), rendues dans la coquille du rôle */}
           {([

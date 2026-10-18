@@ -265,9 +265,6 @@
 @keyframes pageIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .page-in { animation: pageIn 0.5s var(--ease-out-expo) both; }
 
-/* ---- Header sticky : disparition fluide près du footer ---- */
-.header-hidden { transform: translateY(-110%); opacity: 0; }
-
 /* ---- Liens du footer ---- */
 .foot-link {
   position: relative;
