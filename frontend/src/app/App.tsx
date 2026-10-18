@@ -17,6 +17,8 @@ import ProtectedRoute from './components/learn/ProtectedRoute';
 import Home from './pages/vitrine/Home';
 import Login from './pages/learn/auth/Login';
 import FirstLogin from './pages/learn/auth/FirstLogin';
+const ForgotPassword = lazy(() => import('./pages/learn/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/learn/auth/ResetPassword'));
 
 // Public Pages (vitrine secondaire)
 const About = lazy(() => import('./pages/vitrine/About'));
@@ -102,9 +104,11 @@ export default function App() {
           <Route path="/verify" element={<PublicLayout><VerifyDocument /></PublicLayout>} />
           <Route path="/verify/:number" element={<PublicLayout><VerifyDocument /></PublicLayout>} />
 
-          {/* Authentification — coquille vitrine (header/footer/fond animé/transitions) */}
-          <Route path="/learn/login" element={<PublicLayout><Login /></PublicLayout>} />
-          <Route path="/learn/first-login" element={<PublicLayout><FirstLogin /></PublicLayout>} />
+          {/* Authentification — page dédiée plein écran, sans header/footer vitrine */}
+          <Route path="/learn/login" element={<Login />} />
+          <Route path="/learn/first-login" element={<FirstLogin />} />
+          <Route path="/learn/forgot-password" element={<ForgotPassword />} />
+          <Route path="/learn/reset-password" element={<ResetPassword />} />
 
           {/* Menu utilisateur — pages transverses (tous rôles authentifiés), rendues dans la coquille du rôle */}
           {([

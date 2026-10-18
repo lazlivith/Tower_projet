@@ -1,19 +1,14 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate, Link, useLocation } from 'react-router';
 import { Helmet } from 'react-helmet-async';
-import { LogIn, UserPlus, Mail, Lock, User2, Loader2 } from 'lucide-react';
+import { UserPlus, Mail, Lock, User2, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 import AuthShell from '../../../components/vitrine/AuthShell';
+import AuthField from '../../../components/vitrine/AuthField';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useReveal } from '../../../hooks/useReveal';
-
-const DEMO_ACCOUNTS = [
-  { role: 'Étudiant', email: 'eleve@tower.ma' },
-  { role: 'Instructeur', email: 'prof@tower.ma' },
-  { role: 'Admin', email: 'admin@tower.ma' },
-];
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
@@ -26,8 +21,6 @@ export default function Login() {
     password: '',
     name: '',
   });
-
-  useReveal([isLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,107 +65,90 @@ export default function Login() {
     });
   };
 
-  const field = 'w-full border-0 border-b border-[color:var(--color-line)] bg-transparent py-2.5 pl-7 text-[15px] outline-none focus:border-[color:var(--color-accent)] transition-colors';
-
   return (
     <div>
       <Helmet><title>{isLogin ? 'Connexion' : 'Inscription'} — Tower Structure</title></Helmet>
 
       <AuthShell
-        icon={isLogin ? LogIn : UserPlus}
-        eyebrow="Espace pédagogique"
-        title={isLogin ? 'Connexion à Tower Structure' : 'Rejoindre Tower Structure'}
-        subtitle={isLogin ? 'Accédez à votre espace apprenant, formateur ou administrateur.' : 'Créez votre compte étudiant en quelques secondes.'}
+        title={isLogin ? 'Bienvenue' : 'Créer un compte'}
+        subtitle={isLogin ? 'Connectez-vous à votre espace Tower Structure.' : 'Rejoignez Tower Structure en quelques secondes.'}
         footer={
-          isLogin && (
-            <div className="fade-up mt-6 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-paper-2)]/40 p-5">
-              <p className="eyebrow">Comptes de démonstration</p>
-              <ul className="mt-3 space-y-2">
-                {DEMO_ACCOUNTS.map((a) => (
-                  <li key={a.email} className="flex items-center justify-between gap-3 border-t border-[color:var(--color-line)] py-2 text-[13px] first:border-t-0 first:pt-0">
-                    <span className="text-[color:var(--color-ink-soft)]">{a.role}</span>
-                    <button
-                      type="button"
-                      onClick={() => setFormData((f) => ({ ...f, email: a.email }))}
-                      className="font-mono text-[12.5px] text-[color:var(--color-accent)] hover:underline"
-                      title="Pré-remplir l'email"
-                    >
-                      {a.email}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-[11.5px] text-[color:var(--color-ink-soft)]">
-                Mot de passe pour tous les comptes : <span className="font-mono text-[color:var(--color-ink)]">password123</span>
-              </p>
-            </div>
-          )
+          <button
+            type="button"
+            onClick={() => { setIsLogin(!isLogin); setError(''); }}
+            className="mt-6 w-full text-center text-[13.5px] text-slate-500"
+          >
+            {isLogin ? (
+              <>Pas encore de compte ? <span className="font-semibold text-[#2189B7] hover:underline">S'inscrire</span></>
+            ) : (
+              <>Déjà un compte ? <span className="font-semibold text-[#2189B7] hover:underline">Se connecter</span></>
+            )}
+          </button>
         }
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           {!isLogin && (
-            <div>
-              <label htmlFor="name" className="eyebrow">Nom complet</label>
-              <div className="relative mt-2">
-                <User2 className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
-                <input
-                  type="text" id="name" name="name" required
-                  value={formData.name} onChange={handleChange}
-                  className={field}
-                />
-              </div>
-            </div>
+            <AuthField
+              icon={User2}
+              label="Nom complet"
+              id="name" name="name" type="text" required
+              value={formData.name} onChange={handleChange}
+            />
           )}
 
-          <div>
-            <label htmlFor="email" className="eyebrow">Email</label>
-            <div className="relative mt-2">
-              <Mail className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
-              <input
-                type="email" id="email" name="email" required
-                value={formData.email} onChange={handleChange}
-                className={field}
-                autoComplete="email"
-              />
-            </div>
-          </div>
+          <AuthField
+            icon={Mail}
+            label="Adresse email"
+            id="email" name="email" type="email" required
+            value={formData.email} onChange={handleChange}
+            autoComplete="email"
+          />
 
-          <div>
-            <label htmlFor="password" className="eyebrow">Mot de passe</label>
-            <div className="relative mt-2">
-              <Lock className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
-              <input
-                type="password" id="password" name="password" required
-                value={formData.password} onChange={handleChange}
-                className={field}
-                autoComplete={isLogin ? 'current-password' : 'new-password'}
-              />
-            </div>
-          </div>
+          <AuthField
+            icon={Lock}
+            label="Mot de passe"
+            labelRight={
+              isLogin && (
+                <Link to="/learn/forgot-password" className="text-[12.5px] font-semibold text-[#2189B7] hover:underline">
+                  Mot de passe oublié ?
+                </Link>
+              )
+            }
+            id="password" name="password" type={showPassword ? 'text' : 'password'} required
+            value={formData.password} onChange={handleChange}
+            autoComplete={isLogin ? 'current-password' : 'new-password'}
+            endAdornment={
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="text-slate-400 hover:text-slate-600"
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            }
+          />
 
           {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-[13px] text-red-500">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-[13px] text-red-600">
               {error}
             </div>
           )}
 
-          <button type="submit" disabled={loading} className="btn btn-solid mt-2 w-full justify-center disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-[#F59E0B] py-3.5 text-[15px] font-semibold text-[#0a2132] transition-colors hover:bg-[#f7ad2e] disabled:opacity-60"
+          >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                {isLogin ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
                 {isLogin ? 'Se connecter' : "S'inscrire"}
+                {isLogin ? <ArrowRight className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
               </>
             )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setIsLogin(!isLogin); setError(''); }}
-            className="arrow-link mx-auto text-[13px] text-[color:var(--color-ink-soft)]"
-          >
-            {isLogin ? "Pas encore de compte ? S'inscrire" : 'Déjà un compte ? Se connecter'}
           </button>
         </form>
       </AuthShell>
