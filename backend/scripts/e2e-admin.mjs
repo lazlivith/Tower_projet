@@ -11,6 +11,7 @@
  */
 import './_quiet.mjs'; // DOIT rester en premier (env + logs silencieux avant l'import de app)
 import request from 'supertest';
+import bcrypt from 'bcrypt';
 import app from '../src/app.js';
 import prisma from '../src/config/prisma.js';
 import { deleteFile } from '../src/services/storage.service.js';
@@ -800,6 +801,167 @@ const created = { pubId: null, projId: null, courseId: null, classroomIds: [], i
     const r = await auth(eleveTok)(api().get('/api/notifications'));
     eq(r.status, 200, 'HTTP');
   });
+
+  // ─────────── Recette métier — parcours utilisateurs complets ───────────
+  sec('Recette — SuperAdmin : onboarding formateur (identifiants envoyés par e-mail)');
+  await check('POST /admin/instructors/onboard → 201, isFirstLogin=true, mailSent', async () => {
+    const r = await A.post('/api/admin/instructors/onboard', {
+      nom: 'E2E Formateur Onboardé', email: `e2e.onboard.${stamp}@tower.ma`, courseId: created.courseId,
+    });
+    eq(r.status, 201, 'HTTP');
+    const instr = r.body.data?.instructor;
+    assert(instr?.id, 'instructor id manquant');
+    eq(r.body.data.mailSent, true, 'mailSent');
+    created.instructorIds.push(instr.id);
+    const dbUser = await prisma.user.findUnique({ where: { id: instr.id } });
+    eq(dbUser.role, 'INSTRUCTOR', 'rôle');
+    eq(dbUser.isFirstLogin, true, 'isFirstLogin (changement de mot de passe forcé au premier login)');
+  });
+
+  sec('Recette — Formateur : premier login (changement de mot de passe obligatoire)');
+  let firstLoginEmail;
+  await check('Connexion avec isFirstLogin=true → 403 + requirePasswordChange', async () => {
+    firstLoginEmail = `e2e.firstlogin.${stamp}@tower.ma`;
+    const passwordHash = await bcrypt.hash('TempPass123!', 10);
+    const u = await prisma.user.create({
+      data: { nom: 'E2E Premier Login', email: firstLoginEmail, passwordHash, role: 'INSTRUCTOR', isActive: true, isFirstLogin: true },
+    });
+    created.instructorIds.push(u.id);
+    const r = await api().post('/api/auth/login').send({ email: firstLoginEmail, password: 'TempPass123!' });
+    eq(r.status, 403, 'HTTP');
+    eq(r.body.requirePasswordChange, true, 'requirePasswordChange');
+  });
+  await check('POST /auth/change-initial-password puis reconnexion avec le nouveau mot de passe', async () => {
+    const r = await api().post('/api/auth/change-initial-password').send({
+      email: firstLoginEmail, currentPassword: 'TempPass123!', newPassword: 'NouveauPass456!',
+    });
+    eq(r.status, 200, 'HTTP');
+    const relog = await login(firstLoginEmail, 'NouveauPass456!');
+    assert(relog.accessToken, 'reconnexion après changement de mot de passe');
+  });
+
+  sec('Recette — Formateur : session live Jitsi native (hors lien externe type Teams)');
+  let jitsiSessionId;
+  await check('POST /sessions/schedule → 201 (salle Jitsi générée)', async () => {
+    const r = await auth(profTok)(api().post('/api/sessions/schedule')).send({
+      courseId: teachCourseId, title: 'E2E — Session Jitsi native', scheduledAt: new Date(Date.now() + 86400000).toISOString(),
+    });
+    eq(r.status, 201, 'HTTP');
+    jitsiSessionId = r.body.session?.id ?? r.body.id;
+    assert(jitsiSessionId, 'id session manquant');
+  });
+  await check('GET /sessions/:id/join (formateur) → provider jitsi + URL de jonction', async () => {
+    const r = await auth(profTok)(api().get(`/api/sessions/${jitsiSessionId}/join`));
+    eq(r.status, 200, 'HTTP');
+    eq(r.body.provider, 'jitsi', 'provider');
+    eq(r.body.external, false, 'external');
+    eq(r.body.moderator, true, 'moderator (formateur)');
+    assert(typeof r.body.url === 'string' && r.body.url.length > 0, 'URL de jonction manquante');
+  });
+  await check('DELETE /instructor/sessions/:id → nettoyage', async () => {
+    const r = await auth(profTok)(api().delete(`/api/instructor/sessions/${jitsiSessionId}`));
+    eq(r.status, 200, 'HTTP');
+  });
+
+  sec('Recette — Étudiant : inscription, paiement Stripe, leçons séquentielles, certificat');
+  let newStudentTok, newStudentId, recetteCourseId, recetteClassId, lessonAId, lessonBId;
+  const studentEmail = `e2e.etudiant.${stamp}@example.com`;
+
+  await check('Admin : formation dédiée + classe + formateur assigné', async () => {
+    const r = await A.post('/api/admin/courses', {
+      title: 'E2E — Parcours Étudiant', description: 'Formation dédiée au test du parcours étudiant complet.',
+      price: 1500, classroomName: 'E2E — Classe recette',
+    });
+    eq(r.status, 201, 'HTTP');
+    recetteCourseId = r.body.course.id;
+    recetteClassId = r.body.classroom.id;
+    const assign = await A.patch(`/api/admin/classrooms/${recetteClassId}`, { instructorId: profId });
+    eq(assign.status, 200, 'HTTP assignation formateur');
+  });
+  await check('Formateur : ajoute 2 leçons séquentielles', async () => {
+    const l1 = await auth(profTok)(api().post('/api/instructor/lessons')).send({
+      courseId: recetteCourseId, title: 'E2E — Leçon 1', sequenceOrder: 1,
+    });
+    eq(l1.status, 201, 'HTTP leçon 1');
+    lessonAId = l1.body.lesson?.id ?? l1.body.id;
+    const l2 = await auth(profTok)(api().post('/api/instructor/lessons')).send({
+      courseId: recetteCourseId, title: 'E2E — Leçon 2', sequenceOrder: 2,
+    });
+    eq(l2.status, 201, 'HTTP leçon 2');
+    lessonBId = l2.body.lesson?.id ?? l2.body.id;
+    assert(lessonAId && lessonBId, 'id de leçon manquant');
+  });
+  await check('POST /auth/register → 201, compte STUDENT auto-inscrit', async () => {
+    const r = await api().post('/api/auth/register').send({
+      nom: 'E2E Étudiant Recette', email: studentEmail, password: 'EtudiantPass123!',
+    });
+    eq(r.status, 201, 'HTTP');
+    const u = await prisma.user.findUnique({ where: { email: studentEmail } });
+    newStudentId = u.id;
+    eq(u.role, 'STUDENT', 'rôle forcé STUDENT');
+    eq(u.isFirstLogin, false, 'pas de changement de mot de passe forcé pour une auto-inscription');
+  });
+  await check('Connexion du nouvel étudiant', async () => {
+    const s = await login(studentEmail, 'EtudiantPass123!');
+    newStudentTok = s.accessToken;
+  });
+  await check('POST /payments/checkout (STRIPE, FULL) → 201 + session Stripe réelle (mode test)', async () => {
+    const r = await auth(newStudentTok)(api().post('/api/payments/checkout')).send({
+      courseId: recetteCourseId, paymentMethod: 'STRIPE', paymentPlan: 'FULL',
+    });
+    eq(r.status, 201, 'HTTP');
+    assert(/^https:\/\/checkout\.stripe\.com\//.test(r.body.checkoutUrl || ''), `URL Stripe attendue, reçu : ${r.body.checkoutUrl}`);
+    eq(r.body.enrollment?.accessStatus, 'SUSPENDED', 'accès suspendu tant que le paiement Stripe n’est pas confirmé (webhook)');
+  });
+  await check('POST /payments/simulate → active l’accès (mode test, remplace le webhook Stripe)', async () => {
+    const r = await auth(newStudentTok)(api().post('/api/payments/simulate')).send({ courseId: recetteCourseId });
+    eq(r.status, 200, 'HTTP');
+    eq(r.body.enrollment?.accessStatus, 'ACTIVE', 'accès actif');
+  });
+  await check('GET /courses/:id/lessons → leçon 1 ouverte, leçon 2 verrouillée (déblocage N-1)', async () => {
+    const r = await auth(newStudentTok)(api().get(`/api/courses/${recetteCourseId}/lessons`));
+    eq(r.status, 200, 'HTTP');
+    const l1 = r.body.find((l) => l.id === lessonAId);
+    const l2 = r.body.find((l) => l.id === lessonBId);
+    eq(l1.locked, false, 'leçon 1 doit être ouverte');
+    eq(l2.locked, true, 'leçon 2 doit être verrouillée tant que la leçon 1 n’est pas achevée');
+  });
+  await check('PATCH /student/lessons/:id/toggle sur la leçon verrouillée → 403', async () => {
+    const r = await auth(newStudentTok)(api().patch(`/api/student/lessons/${lessonBId}/toggle`)).send({ isCompleted: true });
+    eq(r.status, 403, 'HTTP');
+    eq(r.body.locked, true, 'locked');
+  });
+  await check('Leçon 1 marquée achevée → déverrouille la leçon 2', async () => {
+    const t = await auth(newStudentTok)(api().patch(`/api/student/lessons/${lessonAId}/toggle`)).send({ isCompleted: true });
+    eq(t.status, 200, 'HTTP');
+    const r = await auth(newStudentTok)(api().get(`/api/courses/${recetteCourseId}/lessons`));
+    const l2 = r.body.find((l) => l.id === lessonBId);
+    eq(l2.locked, false, 'leçon 2 doit être déverrouillée');
+  });
+  await check('POST /lessons/:id/track → cumule le temps sur Enrollment.hoursSpent', async () => {
+    const enr = await prisma.enrollment.findFirst({ where: { studentId: newStudentId, courseId: recetteCourseId } });
+    const before = Number(enr.hoursSpent);
+    const r = await auth(newStudentTok)(api().post(`/api/lessons/${lessonBId}/track`)).send({ seconds: 1800, videoPercent: 50 });
+    eq(r.status, 200, 'HTTP');
+    const after = await prisma.enrollment.findUnique({ where: { id: enr.id } });
+    assert(Number(after.hoursSpent) > before, 'hoursSpent doit augmenter après le suivi de présence');
+  });
+  await check('Certificat délivré automatiquement à 85 h de présence (aucun quiz sur cette classe)', async () => {
+    const enr = await prisma.enrollment.findFirst({ where: { studentId: newStudentId, courseId: recetteCourseId } });
+    await prisma.enrollment.update({ where: { id: enr.id }, data: { hoursSpent: 85 } });
+    const r = await auth(newStudentTok)(api().get('/api/student/certificates'));
+    eq(r.status, 200, 'HTTP');
+    assert(r.body.certificates?.some((c) => c.courseId === recetteCourseId),
+      'le certificat aurait dû être délivré automatiquement (85 h atteintes, pas de quiz à valider sur cette classe)');
+  });
+
+  try {
+    await prisma.generatedDocument.deleteMany({ where: { courseId: recetteCourseId } });
+    await prisma.course.delete({ where: { id: recetteCourseId } }); // cascade classroom/leçons/inscription
+    await prisma.user.delete({ where: { id: newStudentId } });
+  } catch (e) {
+    console.log(`  ${C.y}!${C.x} nettoyage recette étudiant partiel : ${e.message}`);
+  }
 
   // ─────────────────────────── cleanup ───────────────────────────
   sec('Nettoyage');
