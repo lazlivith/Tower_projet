@@ -13,7 +13,7 @@
 | Mot de passe oublié | Jeton aléatoire 48 o **haché en BDD** (`password_reset_tokens`), expiration 1 h, usage unique (`usedAt`), révocation des refresh tokens après reset, purge quotidienne (cron) |
 | Webhook Stripe | Corps brut (`express.raw`) + vérification de signature `constructEvent` |
 | Validation | Zod (`.strict()`) sur toutes les entrées sensibles |
-| Upload | `multer` — images 5 Mo, PDF 20 Mo, tableurs 2 Mo (mémoire), filtres MIME |
+| Upload | `multer` — images 5 Mo, documents/PDF 25 Mo, vidéos 300 Mo, tableurs 2 Mo (mémoire), filtres MIME |
 | RBAC | `restrictToRole([...])` + `checkGlobalActivation` (compte suspendu) + vérification d'inscription `ACTIVE` par ressource |
 
 ## Correctifs appliqués (post-W7)
